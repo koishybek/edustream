@@ -4,6 +4,7 @@ import { UNAUTHORIZED_EVENT } from "./api/client";
 import { isOnboarded, useAuth } from "./auth/auth.store";
 import { useI18n } from "./i18n/I18nProvider";
 import AuthScreen from "../features/auth/AuthScreen";
+import CourseScreen from "../features/course/CourseScreen";
 import HomeScreen from "../features/home/HomeScreen";
 import LearningScreen from "../features/learning/LearningScreen";
 import OnboardingScreen from "../features/onboarding/OnboardingScreen";
@@ -109,6 +110,14 @@ export const router = createBrowserRouter([
         element: (
           <Protected requireOnboarded>
             <HomeScreen />
+          </Protected>
+        ),
+      },
+      {
+        path: "/course/:slug",
+        element: (
+          <Protected requireOnboarded>
+            <CourseScreen />
           </Protected>
         ),
       },

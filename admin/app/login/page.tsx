@@ -1,20 +1,31 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { login } from "@/lib/auth";
 
 /**
- * Login shell. Phase 0 establishes the look + tokens; Phase 4 wires it to
- * `POST /api/v1/auth/login` (ADMIN role only), stores the token, and redirects
- * to the dashboard.
+ * ADMIN-only sign in. Posts to `/auth/login`, rejects non-ADMIN accounts with a
+ * friendly error, stores the access token, and redirects to the dashboard.
  */
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setNotice("Authentication is wired in Phase 4.");
+    setError(null);
+    setLoading(true);
+    try {
+      await login(email.trim(), password);
+      router.replace("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign in failed.");
+      setLoading(false);
+    }
   }
 
   return (
@@ -64,27 +75,26 @@ export default function LoginPage() {
             />
           </label>
 
-          {notice && (
+          {error && (
             <div
               role="alert"
-              className="rounded-md bg-warning-subtle px-3 py-2 text-sm font-medium text-warning"
+              className="rounded-md bg-error-subtle px-3 py-2 text-sm font-medium text-error"
             >
-              {notice}
+              {error}
             </div>
           )}
 
           <button
             type="submit"
-            className="w-full rounded-md bg-brand py-3 font-bold text-white transition-colors hover:bg-brand-pressed"
+            disabled={loading}
+            className="w-full rounded-md bg-brand py-3 font-bold text-white transition-colors hover:bg-brand-pressed disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Sign in
+            {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-text-tertiary">
-          ADMIN role required · wired to{" "}
-          <code className="text-text-secondary">/api/v1/auth/login</code> in
-          Phase 4.
+          ADMIN role required to access this console.
         </p>
       </div>
     </main>

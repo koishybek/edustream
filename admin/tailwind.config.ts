@@ -10,7 +10,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#F7F6F2",
+        background: "#FAFAF7",
         surface: "#FFFFFF",
         "surface-alt": "#F1F0EA",
         border: "#E4E3DC",
@@ -19,8 +19,8 @@ const config: Config = {
         "text-secondary": "#6B7066",
         "text-tertiary": "#9CA096",
         brand: {
-          DEFAULT: "#14533B",
-          pressed: "#0F3F2D",
+          DEFAULT: "#1F5C3D",
+          pressed: "#163F2A",
           subtle: "#E6F0EA",
         },
         success: { DEFAULT: "#1E8E5A", subtle: "#E3F3EA" },
