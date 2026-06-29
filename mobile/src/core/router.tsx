@@ -8,6 +8,7 @@ import CourseScreen from "../features/course/CourseScreen";
 import HomeScreen from "../features/home/HomeScreen";
 import LearningScreen from "../features/learning/LearningScreen";
 import OnboardingScreen from "../features/onboarding/OnboardingScreen";
+import PlayerScreen from "../features/player/PlayerScreen";
 import ProfileScreen from "../features/profile/ProfileScreen";
 import SplashScreen from "../features/splash/SplashScreen";
 import WelcomeScreen, { INTRO_SEEN_KEY } from "../features/welcome/WelcomeScreen";
@@ -134,6 +135,14 @@ export const router = createBrowserRouter([
         element: (
           <Protected>
             <ProfileScreen />
+          </Protected>
+        ),
+      },
+      {
+        path: "/learn/:courseId",
+        element: (
+          <Protected requireOnboarded>
+            <PlayerScreen />
           </Protected>
         ),
       },

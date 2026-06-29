@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { AppLocale } from "../auth/types";
 import { dictionaries } from "./dictionaries";
+import { extraDict } from "./phase23.dict";
 
 const STORAGE_KEY = "edustream.locale";
 const DEFAULT_LOCALE: AppLocale = "ru";
@@ -38,8 +39,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const t = useCallback(
     (key: string, params?: TranslateParams) => {
-      const table = dictionaries[locale];
-      let value = table[key] ?? dictionaries[DEFAULT_LOCALE][key] ?? key;
+      let value =
+        dictionaries[locale][key] ??
+        extraDict[locale][key] ??
+        dictionaries[DEFAULT_LOCALE][key] ??
+        extraDict[DEFAULT_LOCALE][key] ??
+        key;
       if (params) {
         for (const [name, replacement] of Object.entries(params)) {
           value = value.replace(`{${name}}`, String(replacement));

@@ -1,42 +1,369 @@
+import { useState } from "react";
+import {
+  ArrowLeft,
+  BarChart3,
+  Bookmark,
+  Check,
+  ChevronDown,
+  Clock,
+  CreditCard,
+  Lock,
+  PlayCircle,
+  Share2,
+} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useCourse } from "../../core/catalog/catalog.api";
+import { useCourse, useCourseReviews } from "../../core/catalog/catalog.api";
+import { durationHours, formatKzt } from "../../core/catalog/format";
+import type { CourseModule } from "../../core/catalog/types";
+import { useCheckout, useEnrollments } from "../../core/learning/learning.api";
 import { useI18n } from "../../core/i18n/I18nProvider";
-import { AppBar } from "../../ui/AppBar";
+import { Avatar } from "../../ui/Avatar";
+import { Badge } from "../../ui/Badge";
+import { Button } from "../../ui/Button";
+import { categoryVisual } from "../../ui/Cover";
+import { RatingStars } from "../../ui/RatingStars";
+import { Sheet } from "../../ui/Sheet";
 import { Spinner } from "../../ui/Spinner";
+import { useSnackbar } from "../../ui/Snackbar";
 
-/**
- * Placeholder course-detail screen. The catalog data layer is wired (so the
- * title resolves), but the full detail UI — module accordion, reviews, sticky
- * buy CTA — is built by the next agent (Mobile 2/4).
- */
+function ModuleRow({
+  module,
+  index,
+  defaultOpen,
+}: {
+  module: CourseModule;
+  index: number;
+  defaultOpen?: boolean;
+}) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(defaultOpen ?? false);
+  const mins = Math.round(
+    module.lessons.reduce((s, l) => s + l.durationSeconds, 0) / 60,
+  );
+  return (
+    <div className={`module${open ? " open" : ""}`}>
+      <button
+        type="button"
+        className="module__head"
+        style={{ width: "100%", background: "none", border: "none", font: "inherit", textAlign: "left" }}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <div className="n">{index + 1}</div>
+        <div className="tt">
+          <div className="t-bodysb">{module.title}</div>
+          <div className="t-meta">
+            {t("course.moduleMeta", { lessons: module.lessons.length, mins })}
+          </div>
+        </div>
+        <ChevronDown className="icon ch" />
+      </button>
+      <div className="module__body">
+        {module.lessons.map((l) => (
+          <div className="lesson" key={l.id}>
+            {l.isFreePreview ? (
+              <PlayCircle className="icon-sm ic" />
+            ) : (
+              <Lock className="icon-sm ic" />
+            )}
+            <span>{l.title}</span>
+            {l.isFreePreview && (
+              <Badge variant="free" className="free">
+                {t("course.preview")}
+              </Badge>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function CourseScreen() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
+  const { snack } = useSnackbar();
+
   const { data: course, isLoading } = useCourse(slug);
+  const { data: reviews } = useCourseReviews(course?.id);
+  const { data: enrollments } = useEnrollments();
+  const checkout = useCheckout();
+
+  const [payOpen, setPayOpen] = useState(false);
+  const [method, setMethod] = useState<"card" | "kaspi">("card");
+  const [success, setSuccess] = useState(false);
+
+  if (isLoading || !course) {
+    return (
+      <div className="screen">
+        <div className="screen__top">
+          <div className="appbar pad">
+            <button className="appbar__btn" onClick={() => navigate(-1)} aria-label={t("back")}>
+              <ArrowLeft className="icon" />
+            </button>
+          </div>
+        </div>
+        <div className="screen__scroll" style={{ display: "grid", placeItems: "center", paddingTop: 60 }}>
+          <Spinner />
+        </div>
+      </div>
+    );
+  }
+
+  const { gradient, Icon } = categoryVisual(course.category.slug);
+  const enrolled = !!enrollments?.some((e) => e.course.id === course.id);
+  const totalLessons = course.modules.reduce((s, m) => s + m.lessons.length, 0);
+  const hasPreview = course.modules.some((m) => m.lessons.some((l) => l.isFreePreview));
+
+  async function buy() {
+    if (!course) return;
+    try {
+      await checkout.mutateAsync(course.id);
+      setPayOpen(false);
+      setSuccess(true);
+    } catch {
+      snack(t("errorGeneric"), "error");
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="screen">
+        <div className="success">
+          <div className="success__check">
+            <Check className="icon" />
+          </div>
+          <div className="t-title">{t("checkout.successTitle")}</div>
+          <div className="t-body muted">
+            {t("checkout.successBody", { title: course.title })}
+          </div>
+          <div style={{ height: 8 }} />
+          <Button variant="primary" block onClick={() => navigate("/learning")}>
+            {t("checkout.toLearning")}
+          </Button>
+          <Button variant="text" onClick={() => navigate("/")}>
+            {t("learning.toCatalog")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="screen">
-      <div className="screen__top">
-        <AppBar
-          title={course?.title ?? t("appName")}
-          onBack={() => navigate(-1)}
-        />
-      </div>
-      <div className="screen__scroll">
-        {isLoading ? (
-          <div style={{ padding: 40, display: "flex", justifyContent: "center" }}>
-            <Spinner />
-          </div>
-        ) : (
-          <div className="pad" style={{ paddingTop: 16 }}>
-            <div className="t-title">{course?.title}</div>
-            <div className="t-caption" style={{ marginTop: 8 }}>
-              {course?.description}
+      <div className="screen__scroll" style={{ paddingBottom: 96 }}>
+        <div style={{ position: "relative" }}>
+          <div className={`${gradient} cv-pat course-hero`}>
+            {hasPreview && (
+              <span className="hero-badge badge badge--free">
+                <PlayCircle className="icon-sm" style={{ width: 12, height: 12 }} />
+                {t("course.freePreview")}
+              </span>
+            )}
+            <div className="cv-ico">
+              <Icon className="icon-lg" />
             </div>
           </div>
+          <div
+            className="appbar pad"
+            style={{ position: "absolute", top: 0, left: 0, right: 0, paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}
+          >
+            <button
+              className="appbar__btn"
+              style={{ background: "rgba(255,255,255,.9)", backdropFilter: "blur(6px)" }}
+              onClick={() => navigate(-1)}
+              aria-label={t("back")}
+            >
+              <ArrowLeft className="icon" />
+            </button>
+            <div style={{ flex: 1 }} />
+            <button
+              className="appbar__btn"
+              style={{ background: "rgba(255,255,255,.9)", backdropFilter: "blur(6px)" }}
+              onClick={() => snack(t("course.saved"))}
+              aria-label={t("course.saved")}
+            >
+              <Bookmark className="icon" />
+            </button>
+            <button
+              className="appbar__btn"
+              style={{ background: "rgba(255,255,255,.9)", backdropFilter: "blur(6px)" }}
+              onClick={() => snack(t("profile.soon"))}
+              aria-label="Share"
+            >
+              <Share2 className="icon" />
+            </button>
+          </div>
+        </div>
+
+        <div className="pad" style={{ paddingTop: 16 }}>
+          <Badge variant="new">{course.category.name}</Badge>
+          <div className="t-title" style={{ marginTop: 10 }}>
+            {course.title}
+          </div>
+        </div>
+
+        <div className="meta-row">
+          <RatingStars
+            value={course.ratingAvg}
+            score={course.ratingAvg.toFixed(1)}
+            count={`(${course.ratingCount})`}
+          />
+          <div className="mi">
+            <Clock className="icon-sm" />
+            {t("course.hours", { hours: durationHours(course.durationMinutes) })}
+          </div>
+          <div className="mi">
+            <BarChart3 className="icon-sm" />
+            {t(`level.${course.level}`)}
+          </div>
+        </div>
+
+        <div className="instructor" style={{ marginTop: 14 }}>
+          <Avatar name={course.instructor.name} />
+          <div style={{ flex: 1 }}>
+            <div className="t-bodysb">{course.instructor.name}</div>
+            <div className="t-caption" style={{ margin: "2px 0 0" }}>
+              {t("course.instructor")}
+            </div>
+          </div>
+        </div>
+
+        <div className="pad" style={{ marginTop: 18 }}>
+          <div className="t-body muted">{course.description}</div>
+        </div>
+
+        <div className="section-head">
+          <div className="t-section">{t("course.curriculum")}</div>
+          <span className="t-caption" style={{ margin: 0 }}>
+            {t("course.modulesLessons", {
+              modules: course.modules.length,
+              lessons: totalLessons,
+            })}
+          </span>
+        </div>
+        <div className="pad">
+          {course.modules.map((m, i) => (
+            <ModuleRow key={m.id} module={m} index={i} defaultOpen={i === 0} />
+          ))}
+        </div>
+
+        <div className="section-head">
+          <div className="t-section">{t("course.reviews")}</div>
+          {reviews && (
+            <span className="t-caption" style={{ margin: 0 }}>
+              {reviews.total}
+            </span>
+          )}
+        </div>
+        <div className="pad">
+          <div className="rating" style={{ marginBottom: 6 }}>
+            <RatingStars
+              value={course.ratingAvg}
+              score={course.ratingAvg.toFixed(1)}
+              count={t("course.avgRating")}
+            />
+          </div>
+          {(reviews?.data ?? []).slice(0, 5).map((r) => (
+            <div className="review" key={r.id}>
+              <div className="review__top">
+                <Avatar name={r.user.name} />
+                <div style={{ flex: 1 }}>
+                  <div className="t-bodysb">{r.user.name}</div>
+                  <RatingStars value={r.rating} />
+                </div>
+              </div>
+              {r.comment && <div className="t-body muted">{r.comment}</div>}
+            </div>
+          ))}
+          {(reviews?.data.length ?? 0) === 0 && (
+            <div className="t-caption">{t("course.noReviews")}</div>
+          )}
+        </div>
+      </div>
+
+      <div className="sticky-cta">
+        {enrolled ? (
+          <Button variant="primary" block onClick={() => navigate(`/learn/${course.id}`)}>
+            {t("course.continue")}
+          </Button>
+        ) : (
+          <>
+            <div className="sticky-cta__price">
+              <span className="amt">{formatKzt(course.priceCents)}</span>
+              <span className="lbl">{t("course.oneTime")}</span>
+            </div>
+            <Button variant="primary" style={{ flex: 1 }} onClick={() => setPayOpen(true)}>
+              {t("course.buy")}
+            </Button>
+          </>
         )}
       </div>
+
+      <Sheet
+        open={payOpen}
+        onClose={() => setPayOpen(false)}
+        title={t("checkout.title")}
+        footer={
+          <Button
+            variant="primary"
+            block
+            loading={checkout.isPending}
+            leftIcon={<Lock className="icon-sm" />}
+            onClick={buy}
+          >
+            {t("checkout.pay", { price: formatKzt(course.priceCents) })}
+          </Button>
+        }
+      >
+        <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "4px 0 14px" }}>
+          <div className={`${gradient} cv-pat learn-card__thumb`} />
+          <div style={{ flex: 1 }}>
+            <div className="t-bodysb">{course.title}</div>
+            <div className="t-caption" style={{ marginTop: 2 }}>
+              {t("checkout.fullAccess")}
+            </div>
+          </div>
+        </div>
+        <hr className="divider" />
+        <div className="group-label" style={{ padding: "16px 0 10px" }}>
+          {t("checkout.method")}
+        </div>
+        <div className="pay-method" data-on={method === "card"} onClick={() => setMethod("card")}>
+          <div className="logo" style={{ background: "#1A1D1A" }}>
+            <CreditCard className="icon-sm" />
+          </div>
+          <div>
+            <div className="t-bodysb">{t("checkout.card")}</div>
+            <div className="t-meta">Visa · Mastercard</div>
+          </div>
+          <div className="radio" />
+        </div>
+        <div className="pay-method" data-on={method === "kaspi"} onClick={() => setMethod("kaspi")}>
+          <div className="logo" style={{ background: "#FF5A00" }}>
+            Kaspi
+          </div>
+          <div>
+            <div className="t-bodysb">Kaspi.kz</div>
+            <div className="t-meta">{t("checkout.kaspiHint")}</div>
+          </div>
+          <div className="radio" />
+        </div>
+        <div style={{ marginTop: 18 }}>
+          <div className="summary-row">
+            <span className="muted">{t("checkout.course")}</span>
+            <span>{course.title}</span>
+          </div>
+          <div className="summary-row">
+            <span className="muted">{t("checkout.price")}</span>
+            <span style={{ fontVariantNumeric: "tabular-nums" }}>{formatKzt(course.priceCents)}</span>
+          </div>
+          <div className="summary-row total">
+            <span>{t("checkout.total")}</span>
+            <span style={{ fontVariantNumeric: "tabular-nums" }}>{formatKzt(course.priceCents)}</span>
+          </div>
+        </div>
+      </Sheet>
     </div>
   );
 }
