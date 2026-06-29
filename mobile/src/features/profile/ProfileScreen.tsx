@@ -1,122 +1,132 @@
+import {
+  Award,
+  Bell,
+  BookOpen,
+  ChevronRight,
+  CreditCard,
+  LogOut,
+  Settings,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../core/auth/auth.store";
 import type { AppLocale } from "../../core/auth/types";
-import { initials } from "../../core/format";
 import { LOCALE_LABELS, LOCALES } from "../../core/i18n/dictionaries";
 import { useI18n } from "../../core/i18n/I18nProvider";
+import { AppBar } from "../../ui/AppBar";
+import { Avatar } from "../../ui/Avatar";
+import { BottomNav } from "../../ui/BottomNav";
 import { Button } from "../../ui/Button";
-import { Screen } from "../../ui/Screen";
+import { ListRow } from "../../ui/ListRow";
+import { Segmented } from "../../ui/Segmented";
+import { useSnackbar } from "../../ui/Snackbar";
 
 export default function ProfileScreen() {
   const { t, locale, setLocale } = useI18n();
+  const navigate = useNavigate();
   const user = useAuth((s) => s.user);
   const updateMe = useAuth((s) => s.updateMe);
   const logout = useAuth((s) => s.logout);
-  const navigate = useNavigate();
+  const { snack } = useSnackbar();
 
   if (!user) return null;
 
-  async function changeLanguage(next: AppLocale) {
+  async function changeLocale(next: AppLocale) {
     setLocale(next);
     try {
       await updateMe({ locale: next });
     } catch {
-      // Keep the UI choice even if persisting the preference fails.
+      // Keep the UI choice even if persisting fails.
     }
   }
-
-  function onSignOut() {
-    logout();
-    navigate("/login", { replace: true });
-  }
+  const soon = () => snack(t("profile.soon"));
 
   return (
-    <Screen className="py-10">
-      <header className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label={t("back")}
-          className="grid h-10 w-10 place-items-center rounded-full border border-border text-lg text-text-secondary"
-        >
-          ←
-        </button>
-        <h1 className="font-display text-2xl font-bold text-text-primary">
-          {t("profile.title")}
-        </h1>
-      </header>
-
-      <div className="mt-8 flex items-center gap-4">
-        <div className="grid h-16 w-16 place-items-center rounded-full bg-brand text-xl font-bold text-white">
-          {initials(user.name)}
-        </div>
-        <div className="min-w-0">
-          <p className="truncate font-display text-lg font-bold text-text-primary">
-            {user.name}
-          </p>
-          <p className="truncate text-sm text-text-secondary">{user.email}</p>
-        </div>
+    <div className="screen">
+      <div className="screen__top">
+        <AppBar
+          title={t("profile.title")}
+          large
+          actions={
+            <button
+              className="appbar__btn"
+              onClick={soon}
+              aria-label={t("profile.groupSettings")}
+            >
+              <Settings className="icon" />
+            </button>
+          }
+        />
       </div>
 
-      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-text-tertiary">
-        {t("profile.language")}
-      </h2>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {LOCALES.map((lc) => (
-          <button
-            key={lc}
-            type="button"
-            onClick={() => changeLanguage(lc)}
-            aria-pressed={locale === lc}
-            className={`min-h-[48px] rounded-md border px-2 text-sm font-semibold transition-colors ${
-              locale === lc
-                ? "border-brand bg-brand-subtle text-brand"
-                : "border-border bg-surface text-text-secondary"
-            }`}
+      <div className="screen__scroll">
+        <div className="prof-head">
+          <Avatar name={user.name} />
+          <div>
+            <div className="t-title">{user.name}</div>
+            <div className="t-caption" style={{ marginTop: 2 }}>
+              {user.email}
+            </div>
+          </div>
+          <Button variant="tonal" small onClick={soon}>
+            {t("profile.edit")}
+          </Button>
+        </div>
+
+        <div className="group-label">{t("profile.language")}</div>
+        <div style={{ padding: "0 18px 18px" }}>
+          <Segmented<AppLocale>
+            options={LOCALES.map((l) => ({ value: l, label: LOCALE_LABELS[l] }))}
+            value={locale}
+            onChange={changeLocale}
+          />
+        </div>
+
+        <div className="group-label">{t("profile.groupLearning")}</div>
+        <div className="settings-group">
+          <ListRow
+            lead={<BookOpen className="icon" />}
+            title={t("profile.myCourses")}
+            trail={<ChevronRight className="icon-sm" />}
+            onClick={() => navigate("/learning")}
+          />
+          <ListRow
+            lead={<Award className="icon" />}
+            title={t("profile.certificates")}
+            trail={<ChevronRight className="icon-sm" />}
+            onClick={soon}
+          />
+        </div>
+
+        <div className="group-label">{t("profile.groupSettings")}</div>
+        <div className="settings-group">
+          <ListRow
+            lead={<Bell className="icon" />}
+            title={t("profile.notifications")}
+            trail={<ChevronRight className="icon-sm" />}
+            onClick={soon}
+          />
+          <ListRow
+            lead={<CreditCard className="icon" />}
+            title={t("profile.payments")}
+            trail={<ChevronRight className="icon-sm" />}
+            onClick={soon}
+          />
+        </div>
+
+        <div style={{ padding: "4px 18px 30px" }}>
+          <Button
+            variant="ghost"
+            block
+            leftIcon={<LogOut className="icon-sm" />}
+            onClick={logout}
+            style={{ color: "var(--error)" }}
           >
-            {LOCALE_LABELS[lc]}
-          </button>
-        ))}
+            {t("profile.signOut")}
+          </Button>
+        </div>
       </div>
 
-      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-text-tertiary">
-        {t("profile.account")}
-      </h2>
-      <dl className="mt-3 divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
-        <div className="flex items-center justify-between px-4 py-3">
-          <dt className="text-sm text-text-secondary">{t("profile.level")}</dt>
-          <dd className="text-sm font-semibold text-text-primary">
-            {user.knowledgeLevel
-              ? t(`level.${user.knowledgeLevel}`)
-              : t("profile.notSet")}
-          </dd>
-        </div>
-        <div className="px-4 py-3">
-          <dt className="text-sm text-text-secondary">{t("profile.interests")}</dt>
-          <dd className="mt-2 flex flex-wrap gap-1.5">
-            {user.interests.length > 0 ? (
-              user.interests.map((id) => (
-                <span
-                  key={id}
-                  className="rounded-full bg-surface-alt px-2.5 py-1 text-xs font-medium text-text-secondary"
-                >
-                  {t(`interest.${id}`)}
-                </span>
-              ))
-            ) : (
-              <span className="text-sm text-text-tertiary">
-                {t("profile.notSet")}
-              </span>
-            )}
-          </dd>
-        </div>
-      </dl>
-
-      <div className="mt-auto pt-10">
-        <Button variant="tonal" onClick={onSignOut} className="w-full">
-          {t("profile.signOut")}
-        </Button>
-      </div>
-    </Screen>
+      <BottomNav />
+    </div>
   );
 }

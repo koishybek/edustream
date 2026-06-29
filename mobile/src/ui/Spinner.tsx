@@ -1,9 +1,9 @@
-export function Spinner({ className = "h-4 w-4" }: { className?: string }) {
+export function Spinner({ className }: { className?: string }) {
   return (
-    <span
+    <div
       role="status"
-      aria-label="loading"
-      className={`inline-block animate-spin rounded-full border-2 border-current border-t-transparent ${className}`}
+      aria-label="Загрузка"
+      className={`spin${className ? " " + className : ""}`}
     />
   );
 }

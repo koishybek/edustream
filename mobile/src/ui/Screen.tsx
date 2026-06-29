@@ -1,20 +1,18 @@
 import type { ReactNode } from "react";
 
-/** Mobile-frame layout: centered, max-width, full dynamic-viewport height. */
+/** A single routed screen inside the app shell (.app). */
 export function Screen({
   children,
-  className = "",
+  className,
+  pop,
 }: {
   children: ReactNode;
   className?: string;
+  pop?: boolean;
 }) {
   return (
-    <div className="min-h-[100dvh] bg-background">
-      <div
-        className={`mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-6 ${className}`}
-      >
-        {children}
-      </div>
-    </div>
+    <section className={`screen${pop ? " pop" : ""}${className ? " " + className : ""}`}>
+      {children}
+    </section>
   );
 }

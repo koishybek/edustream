@@ -1,13 +1,19 @@
 import { useState } from "react";
+import {
+  ArrowLeft,
+  Award,
+  CheckCircle2,
+  Leaf,
+  Sprout,
+  type LucideIcon,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../core/auth/auth.store";
 import type { Level } from "../../core/auth/types";
 import { useI18n } from "../../core/i18n/I18nProvider";
 import { Button } from "../../ui/Button";
-import { Chip } from "../../ui/Chip";
-import { Screen } from "../../ui/Screen";
+import { ChipSelect } from "../../ui/Chip";
 
-// Aligned with the seeded categories.
 const INTERESTS = [
   "climate",
   "water",
@@ -16,96 +22,146 @@ const INTERESTS = [
   "biodiversity",
   "social",
 ];
-const LEVELS: Level[] = ["BEGINNER", "INTERMEDIATE", "ADVANCED"];
+
+const LEVELS: { key: Level; Icon: LucideIcon }[] = [
+  { key: "BEGINNER", Icon: Sprout },
+  { key: "INTERMEDIATE", Icon: Leaf },
+  { key: "ADVANCED", Icon: Award },
+];
+
+const EYEBROW: React.CSSProperties = {
+  color: "var(--accent)",
+  fontWeight: 700,
+  letterSpacing: ".06em",
+  textTransform: "uppercase",
+};
 
 export default function OnboardingScreen() {
   const { t } = useI18n();
-  const updateMe = useAuth((s) => s.updateMe);
   const navigate = useNavigate();
+  const updateMe = useAuth((s) => s.updateMe);
 
+  const [step, setStep] = useState<1 | 2>(1);
   const [selected, setSelected] = useState<string[]>([]);
-  const [level, setLevel] = useState<Level>("BEGINNER");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [level, setLevel] = useState<Level | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const toggle = (id: string) =>
+  function toggle(slug: string) {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug],
     );
+  }
 
-  async function onFinish() {
-    if (selected.length === 0) {
-      setError(t("onboarding.selectHint"));
-      return;
-    }
-    setSubmitting(true);
-    setError(null);
+  async function finish() {
+    if (!level) return;
+    setSaving(true);
     try {
       await updateMe({ interests: selected, knowledgeLevel: level });
       navigate("/", { replace: true });
-    } catch {
-      setError(t("errorGeneric"));
     } finally {
-      setSubmitting(false);
+      setSaving(false);
     }
   }
 
   return (
-    <Screen className="py-12">
-      <p className="font-display text-xs font-bold uppercase tracking-[0.16em] text-brand">
-        {t("onboarding.eyebrow")}
-      </p>
-      <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-text-primary">
-        {t("onboarding.title")}
-      </h1>
-      <p className="mt-2 text-text-secondary">{t("onboarding.subtitle")}</p>
-
-      <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-text-tertiary">
-        {t("onboarding.interestsTitle")}
-      </h2>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {INTERESTS.map((id) => (
-          <Chip
-            key={id}
-            label={t(`interest.${id}`)}
-            selected={selected.includes(id)}
-            onClick={() => toggle(id)}
-          />
-        ))}
+    <div className="screen">
+      <div className="screen__top">
+        <div className="appbar pad">
+          {step === 2 && (
+            <button
+              className="appbar__btn"
+              onClick={() => setStep(1)}
+              aria-label={t("back")}
+            >
+              <ArrowLeft className="icon" />
+            </button>
+          )}
+        </div>
       </div>
 
-      <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-text-tertiary">
-        {t("onboarding.levelTitle")}
-      </h2>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {LEVELS.map((lv) => (
-          <button
-            key={lv}
-            type="button"
-            onClick={() => setLevel(lv)}
-            aria-pressed={level === lv}
-            className={`min-h-[52px] rounded-md border px-2 text-sm font-semibold transition-colors ${
-              level === lv
-                ? "border-brand bg-brand-subtle text-brand"
-                : "border-border bg-surface text-text-secondary"
-            }`}
-          >
-            {t(`level.${lv}`)}
-          </button>
-        ))}
-      </div>
-
-      {error && (
-        <p role="alert" className="mt-4 text-sm font-medium text-error">
-          {error}
-        </p>
+      {step === 1 ? (
+        <>
+          <div className="screen__scroll pad">
+            <div className="t-meta" style={EYEBROW}>
+              {t("onboarding.step1")}
+            </div>
+            <div className="t-display" style={{ margin: "6px 0" }}>
+              {t("interests.title")}
+            </div>
+            <div className="t-body muted" style={{ marginBottom: 22 }}>
+              {t("interests.subtitle")}
+            </div>
+            <div className="chip-wrap">
+              {INTERESTS.map((slug) => (
+                <ChipSelect
+                  key={slug}
+                  pressed={selected.includes(slug)}
+                  onClick={() => toggle(slug)}
+                >
+                  {t(`interest.${slug}`)}
+                </ChipSelect>
+              ))}
+            </div>
+          </div>
+          <div className="sticky-cta" style={{ boxShadow: "none" }}>
+            <Button
+              variant="primary"
+              block
+              disabled={selected.length === 0}
+              onClick={() => setStep(2)}
+            >
+              {t("continue")}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="screen__scroll pad">
+            <div className="t-meta" style={EYEBROW}>
+              {t("onboarding.step2")}
+            </div>
+            <div className="t-display" style={{ margin: "6px 0" }}>
+              {t("level.title")}
+            </div>
+            <div className="t-body muted" style={{ marginBottom: 22 }}>
+              {t("level.subtitle")}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {LEVELS.map(({ key, Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="lvl-opt"
+                  data-on={level === key}
+                  onClick={() => setLevel(key)}
+                >
+                  <div className="lvl-ic">
+                    <Icon className="icon" />
+                  </div>
+                  <div className="lvl-tt">
+                    <div className="t-bodysb">{t(`level.${key}`)}</div>
+                    <div className="t-caption" style={{ marginTop: 2 }}>
+                      {t(`level.${key}.desc`)}
+                    </div>
+                  </div>
+                  <CheckCircle2 className="icon lvl-check" />
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="sticky-cta" style={{ boxShadow: "none" }}>
+            <Button
+              variant="primary"
+              block
+              disabled={!level}
+              loading={saving}
+              onClick={finish}
+            >
+              {t("level.cta")}
+            </Button>
+          </div>
+        </>
       )}
-
-      <div className="mt-auto pt-10">
-        <Button onClick={onFinish} loading={submitting} className="w-full">
-          {t("onboarding.cta")}
-        </Button>
-      </div>
-    </Screen>
+    </div>
   );
 }

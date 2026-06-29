@@ -1,39 +1,60 @@
-import { type InputHTMLAttributes, useId } from "react";
+import { useId, useState, type InputHTMLAttributes, type ReactNode } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
-interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
-  label: string;
+interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
+  label?: string;
+  icon?: ReactNode;
   error?: string;
+  passwordToggle?: boolean;
 }
 
 export function TextField({
   label,
+  icon,
   error,
+  passwordToggle,
+  type = "text",
   id,
-  className = "",
   ...rest
-}: TextFieldProps) {
+}: Props) {
   const generatedId = useId();
   const fieldId = id ?? generatedId;
+  const [show, setShow] = useState(false);
+  const inputType = passwordToggle ? (show ? "text" : "password") : type;
 
   return (
-    <div>
-      <label htmlFor={fieldId} className="text-sm font-semibold text-text-primary">
-        {label}
-      </label>
-      <input
-        id={fieldId}
-        aria-invalid={Boolean(error)}
-        className={`mt-1.5 w-full rounded-md border bg-surface px-4 py-3 text-text-primary outline-none transition-colors placeholder:text-text-tertiary focus:ring-2 focus:ring-brand/15 ${
-          error
-            ? "border-error focus:border-error"
-            : "border-border focus:border-brand"
-        } ${className}`}
-        {...rest}
-      />
+    <div className="field">
+      {label && <label htmlFor={fieldId}>{label}</label>}
+      <div className={`field-input${error ? " is-error" : ""}`}>
+        {icon}
+        <input
+          id={fieldId}
+          type={inputType}
+          aria-invalid={Boolean(error)}
+          {...rest}
+        />
+        {passwordToggle && (
+          <button
+            type="button"
+            onClick={() => setShow((s) => !s)}
+            aria-label={show ? "Скрыть пароль" : "Показать пароль"}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              color: "var(--text-2)",
+              display: "flex",
+            }}
+          >
+            {show ? <EyeOff className="icon" /> : <Eye className="icon" />}
+          </button>
+        )}
+      </div>
       {error && (
-        <p className="mt-1 text-sm text-error" role="alert">
+        <div className="field-error" role="alert">
           {error}
-        </p>
+        </div>
       )}
     </div>
   );

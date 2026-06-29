@@ -1,22 +1,23 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  color-scheme: light;
-}
+@import "./styles/design-system.css";
+@import "./styles/screens.css";
 
 html,
-body,
-#root {
+body {
+  margin: 0;
   height: 100%;
 }
 
+#root {
+  min-height: 100dvh;
+}
+
+/* Soft neutral backdrop behind the centered app column on wide screens;
+   on phones the app fills the viewport. */
 body {
-  margin: 0;
-  background-color: #f7f6f2;
-  color: #1a1c19;
-  font-family: "Manrope", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  background: #e9e9e3;
+}
+@media (max-width: 440px) {
+  body {
+    background: var(--bg);
+  }
 }

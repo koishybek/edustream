@@ -1,38 +1,97 @@
-import { Link } from "react-router-dom";
+import { Bell, SlidersHorizontal, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../core/auth/auth.store";
-import { initials } from "../../core/format";
 import { useI18n } from "../../core/i18n/I18nProvider";
-import { Screen } from "../../ui/Screen";
+import { Avatar } from "../../ui/Avatar";
+import { BottomNav } from "../../ui/BottomNav";
+import { Button } from "../../ui/Button";
+import { Chip } from "../../ui/Chip";
+import { EmptyState } from "../../ui/EmptyState";
+import { SearchField } from "../../ui/SearchField";
+import { useSnackbar } from "../../ui/Snackbar";
+
+const CATS = [
+  "all",
+  "climate",
+  "water",
+  "circular-economy",
+  "esg-reporting",
+  "biodiversity",
+  "social",
+];
 
 export default function HomeScreen() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const user = useAuth((s) => s.user);
-  const firstName = user?.name.split(" ")[0] ?? "";
+  const { snack } = useSnackbar();
+
+  const hour = new Date().getHours();
+  const greetKey =
+    hour < 12 ? "home.morning" : hour < 18 ? "home.day" : "home.evening";
+  const firstName = (user?.name ?? "").split(" ")[0];
+  const soon = () => snack(t("home.catalogSoon"));
 
   return (
-    <Screen className="py-12">
-      <header className="flex items-center justify-between">
-        <p className="font-display text-xl font-bold text-brand">{t("appName")}</p>
-        <Link
-          to="/profile"
-          aria-label={t("nav.profile")}
-          className="grid h-10 w-10 place-items-center rounded-full bg-brand-subtle text-sm font-bold text-brand"
-        >
-          {user ? initials(user.name) : ""}
-        </Link>
-      </header>
+    <div className="screen">
+      <div className="screen__top">
+        <div className="greet">
+          <div className="greet__hi">
+            <div className="t-caption">{t(greetKey)}</div>
+            <div className="nm">{firstName} 👋</div>
+          </div>
+          <button
+            className="appbar__btn"
+            onClick={() => snack(t("profile.soon"))}
+            aria-label={t("profile.notifications")}
+          >
+            <Bell className="icon" />
+          </button>
+          <span
+            onClick={() => navigate("/profile")}
+            style={{ cursor: "pointer" }}
+            aria-label={t("nav.profile")}
+            role="button"
+          >
+            <Avatar name={user?.name ?? "?"} />
+          </span>
+        </div>
+        <div className="pad" style={{ paddingBottom: 6, display: "flex", gap: 10 }}>
+          <div style={{ flex: 1 }}>
+            <SearchField placeholder={t("home.search")} readOnly onClick={soon} />
+          </div>
+          <Button
+            variant="ghost"
+            onClick={soon}
+            style={{ minHeight: 48, padding: "0 14px" }}
+            aria-label="Filters"
+          >
+            <SlidersHorizontal className="icon-sm" />
+          </Button>
+        </div>
+      </div>
 
-      <h1 className="mt-10 font-display text-3xl font-bold tracking-tight text-text-primary">
-        {t("home.greeting", { name: firstName })}
-      </h1>
-      <p className="mt-2 text-text-secondary">{t("home.subtitle")}</p>
+      <div className="screen__scroll">
+        <div className="rail">
+          {CATS.map((c) => (
+            <Chip key={c} active={c === "all"} onClick={soon}>
+              {c === "all" ? t("cat.all") : t(`interest.${c}`)}
+            </Chip>
+          ))}
+        </div>
+        <div className="section-head">
+          <div className="t-section">{t("home.recommended")}</div>
+        </div>
+        <div style={{ padding: "8px 18px 0" }}>
+          <EmptyState
+            icon={<Sparkles className="icon-lg" />}
+            title={t("home.soonTitle")}
+            text={t("home.catalogSoon")}
+          />
+        </div>
+      </div>
 
-      <section className="mt-8 rounded-lg border border-border bg-surface p-5 shadow-card">
-        <span className="inline-block rounded-full bg-brand-subtle px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-brand">
-          Phase 1
-        </span>
-        <p className="mt-3 text-text-secondary">{t("home.catalogSoon")}</p>
-      </section>
-    </Screen>
+      <BottomNav />
+    </div>
   );
 }

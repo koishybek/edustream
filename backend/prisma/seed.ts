@@ -39,13 +39,15 @@ interface CourseSeed {
   modules: ModuleSeed[];
 }
 
+// RU-first names (matches the prototype); icons are Lucide names used by the
+// PWA's category cover system (see mobile ui/Cover.tsx).
 const CATEGORIES = [
-  { name: 'Climate Action', slug: 'climate', icon: 'globe' },
-  { name: 'Water Security', slug: 'water', icon: 'droplet' },
-  { name: 'Circular Economy', slug: 'circular-economy', icon: 'recycle' },
-  { name: 'ESG Reporting', slug: 'esg-reporting', icon: 'bar-chart' },
-  { name: 'Biodiversity', slug: 'biodiversity', icon: 'leaf' },
-  { name: 'Social Equity', slug: 'social', icon: 'users' },
+  { name: 'Климат', slug: 'climate', icon: 'cloud' },
+  { name: 'Вода', slug: 'water', icon: 'droplets' },
+  { name: 'Циркулярная экономика', slug: 'circular-economy', icon: 'recycle' },
+  { name: 'ESG-отчётность', slug: 'esg-reporting', icon: 'bar-chart-3' },
+  { name: 'Биоразнообразие', slug: 'biodiversity', icon: 'leaf' },
+  { name: 'Социальное управление', slug: 'social', icon: 'users' },
 ];
 
 const COURSES: CourseSeed[] = [

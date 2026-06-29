@@ -1,31 +1,28 @@
 import { useEffect, type ReactNode } from "react";
-import {
-  createBrowserRouter,
-  Navigate,
-  Outlet,
-} from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { UNAUTHORIZED_EVENT } from "./api/client";
 import { isOnboarded, useAuth } from "./auth/auth.store";
 import { useI18n } from "./i18n/I18nProvider";
-import LoginScreen from "../features/auth/LoginScreen";
-import RegisterScreen from "../features/auth/RegisterScreen";
+import AuthScreen from "../features/auth/AuthScreen";
 import HomeScreen from "../features/home/HomeScreen";
+import LearningScreen from "../features/learning/LearningScreen";
 import OnboardingScreen from "../features/onboarding/OnboardingScreen";
 import ProfileScreen from "../features/profile/ProfileScreen";
-import { Spinner } from "../ui/Spinner";
+import SplashScreen from "../features/splash/SplashScreen";
+import WelcomeScreen, { INTRO_SEEN_KEY } from "../features/welcome/WelcomeScreen";
 
 /**
- * Root element: runs session bootstrap once, wires the global "session lost"
+ * App shell: runs session bootstrap once, wires the global "session lost"
  * signal to a sign-out, syncs the UI language to the signed-in user, and shows
- * a splash while the stored token is validated. Children render via <Outlet/>
- * only after the auth status resolves, so guards never see "loading".
+ * the branded splash while the stored token is validated. Children render via
+ * <Outlet/> only after the auth status resolves, so guards never see "loading".
  */
 function AppShell() {
   const status = useAuth((s) => s.status);
   const init = useAuth((s) => s.init);
   const logout = useAuth((s) => s.logout);
   const userLocale = useAuth((s) => s.user?.locale);
-  const { t, setLocale } = useI18n();
+  const { setLocale } = useI18n();
 
   useEffect(() => {
     void init();
@@ -41,17 +38,9 @@ function AppShell() {
     if (userLocale) setLocale(userLocale);
   }, [userLocale, setLocale]);
 
-  if (status === "loading") {
-    return (
-      <div className="grid min-h-[100dvh] place-items-center bg-background">
-        <div className="flex flex-col items-center gap-3 text-text-secondary">
-          <Spinner className="h-7 w-7 text-brand" />
-          <span className="text-sm">{t("loading")}</span>
-        </div>
-      </div>
-    );
-  }
-  return <Outlet />;
+  return (
+    <div className="app">{status === "loading" ? <SplashScreen /> : <Outlet />}</div>
+  );
 }
 
 function Protected({
@@ -63,7 +52,10 @@ function Protected({
 }) {
   const status = useAuth((s) => s.status);
   const user = useAuth((s) => s.user);
-  if (status !== "authenticated") return <Navigate to="/login" replace />;
+  if (status !== "authenticated") {
+    const target = localStorage.getItem(INTRO_SEEN_KEY) ? "/login" : "/welcome";
+    return <Navigate to={target} replace />;
+  }
   if (requireOnboarded && !isOnboarded(user)) {
     return <Navigate to="/onboarding" replace />;
   }
@@ -81,10 +73,18 @@ export const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       {
+        path: "/welcome",
+        element: (
+          <GuestOnly>
+            <WelcomeScreen />
+          </GuestOnly>
+        ),
+      },
+      {
         path: "/login",
         element: (
           <GuestOnly>
-            <LoginScreen />
+            <AuthScreen initialMode="login" />
           </GuestOnly>
         ),
       },
@@ -92,7 +92,7 @@ export const router = createBrowserRouter([
         path: "/register",
         element: (
           <GuestOnly>
-            <RegisterScreen />
+            <AuthScreen initialMode="register" />
           </GuestOnly>
         ),
       },
@@ -109,6 +109,14 @@ export const router = createBrowserRouter([
         element: (
           <Protected requireOnboarded>
             <HomeScreen />
+          </Protected>
+        ),
+      },
+      {
+        path: "/learning",
+        element: (
+          <Protected requireOnboarded>
+            <LearningScreen />
           </Protected>
         ),
       },
