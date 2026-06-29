@@ -75,6 +75,20 @@ export class AdminService {
     return { data, page, pageSize, total };
   }
 
+  async getCourse(id: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id },
+      include: {
+        modules: {
+          orderBy: { order: 'asc' },
+          include: { lessons: { orderBy: { order: 'asc' } } },
+        },
+      },
+    });
+    if (!course) throw new NotFoundException('Course not found');
+    return course;
+  }
+
   async createCourse(dto: CreateCourseDto) {
     return this.prisma.course.create({
       data: {

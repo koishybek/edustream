@@ -38,6 +38,11 @@ export class AdminController {
     return this.admin.listCourses(q);
   }
 
+  @Get('courses/:id')
+  getOne(@Param('id') id: string) {
+    return this.admin.getCourse(id);
+  }
+
   @Post('courses')
   create(@Body() dto: CreateCourseDto) {
     return this.admin.createCourse(dto);
