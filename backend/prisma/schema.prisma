@@ -1,0 +1,22 @@
+// EduStream — Prisma schema
+//
+// Phase 0: a single placeholder model so `prisma db push` can prove the DB
+// connection end-to-end. The full domain model (User, Category, Course,
+// Module, Lesson, Enrollment, LessonProgress, Review, Order) arrives in
+// Phase 1 and will replace this file.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Placeholder table for Phase 0 connectivity verification only.
+model HealthCheck {
+  id        String   @id @default(cuid())
+  note      String   @default("ok")
+  createdAt DateTime @default(now())
+}

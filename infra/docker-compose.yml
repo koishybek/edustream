@@ -1,0 +1,31 @@
+# EduStream local infrastructure.
+# Brings up PostgreSQL for the backend. Requires Docker.
+#   docker compose up -d
+#   docker compose down          (keeps data)
+#   docker compose down -v       (wipes data)
+#
+# Backend connection string for this service:
+#   postgresql://edustream:edustream@localhost:5432/edustream?schema=public
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: edustream-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: edustream
+      POSTGRES_PASSWORD: edustream
+      POSTGRES_DB: edustream
+    ports:
+      - "5432:5432"
+    volumes:
+      - edustream-pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edustream -d edustream"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  edustream-pgdata:

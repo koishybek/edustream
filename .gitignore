@@ -1,0 +1,48 @@
+# --- Dependencies ---
+node_modules/
+**/node_modules/
+
+# --- Env / secrets ---
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# --- Build output ---
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# --- Prisma ---
+**/prisma/*.db
+**/prisma/migrations/dev.db*
+
+# --- Flutter / Dart ---
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+mobile/.pub-cache/
+mobile/.pub/
+mobile/ios/Pods/
+mobile/android/.gradle/
+mobile/android/local.properties
+*.iml
+
+# --- Local DB data (kept outside the repo, but guard anyway) ---
+infra/.localpg/
+**/pgdata/
+
+# --- OS / editor / tooling ---
+.DS_Store
+Thumbs.db
+.idea/
+.impeccable/
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-error.log*
