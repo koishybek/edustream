@@ -1,9 +1,5 @@
-// EduStream — Prisma schema
-//
-// Phase 0: a single placeholder model so `prisma db push` can prove the DB
-// connection end-to-end. The full domain model (User, Category, Course,
-// Module, Lesson, Enrollment, LessonProgress, Review, Order) arrives in
-// Phase 1 and will replace this file.
+// EduStream — Prisma schema (full domain model, Phase 1).
+// Money is always integer cents. Default currency KZT.
 
 generator client {
   provider = "prisma-client-js"
@@ -14,9 +10,196 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Placeholder table for Phase 0 connectivity verification only.
-model HealthCheck {
+// ---------- Enums ----------
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum Locale {
+  ru
+  en
+  kz
+}
+
+/// Shared by Course.level and User.knowledgeLevel.
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum PaymentProvider {
+  STRIPE
+}
+
+// ---------- Models ----------
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  phone          String?
+  passwordHash   String
+  role           Role     @default(STUDENT)
+  name           String
+  avatarUrl      String?
+  locale         Locale   @default(ru)
+  interests      String[] @default([])
+  knowledgeLevel Level?
+  createdAt      DateTime @default(now())
+
+  coursesTaught Course[]     @relation("InstructorCourses")
+  enrollments   Enrollment[]
+  reviews       Review[]
+  orders        Order[]
+
+  @@index([role])
+}
+
+model Category {
+  id      String   @id @default(cuid())
+  name    String
+  slug    String   @unique
+  icon    String
+  courses Course[]
+}
+
+model Course {
+  id             String       @id @default(cuid())
+  title          String
+  slug           String       @unique
+  description    String
+  categoryId     String
+  category       Category     @relation(fields: [categoryId], references: [id])
+  level          Level
+  durationMinutes Int
+  priceCents     Int
+  currency       String       @default("KZT")
+  instructorId   String
+  instructor     User         @relation("InstructorCourses", fields: [instructorId], references: [id])
+  ratingAvg      Float        @default(0)
+  ratingCount    Int          @default(0)
+  coverImageUrl  String?
+  status         CourseStatus @default(DRAFT)
+  createdAt      DateTime     @default(now())
+
+  modules     Module[]
+  enrollments Enrollment[]
+  reviews     Review[]
+  orders      Order[]
+
+  @@index([categoryId])
+  @@index([instructorId])
+  @@index([status])
+  @@index([level])
+  @@index([createdAt])
+}
+
+model Module {
+  id       String   @id @default(cuid())
+  courseId String
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title    String
+  order    Int
+  lessons  Lesson[]
+
+  @@index([courseId])
+}
+
+model Lesson {
+  id              String   @id @default(cuid())
+  moduleId        String
+  module          Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title           String
+  order           Int
+  videoUrl        String
+  durationSeconds Int
+  isFreePreview   Boolean  @default(false)
+
+  progress LessonProgress[]
+
+  @@index([moduleId])
+}
+
+model Enrollment {
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId        String
+  course          Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  status          EnrollmentStatus @default(ACTIVE)
+  progressPercent Int              @default(0)
+  createdAt       DateTime         @default(now())
+
+  lessonProgress LessonProgress[]
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+}
+
+model LessonProgress {
+  id             String     @id @default(cuid())
+  enrollmentId   String
+  enrollment     Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lessonId       String
+  lesson         Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed      Boolean    @default(false)
+  watchedSeconds Int        @default(0)
+  completedAt    DateTime?
+
+  @@unique([enrollmentId, lessonId])
+  @@index([enrollmentId])
+  @@index([lessonId])
+}
+
+model Review {
   id        String   @id @default(cuid())
-  note      String   @default("ok")
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String?
   createdAt DateTime @default(now())
+
+  @@unique([courseId, userId])
+  @@index([courseId])
+  @@index([userId])
+}
+
+model Order {
+  id                String          @id @default(cuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+  courseId          String
+  course            Course          @relation(fields: [courseId], references: [id])
+  amountCents       Int
+  currency          String          @default("KZT")
+  provider          PaymentProvider @default(STRIPE)
+  providerSessionId String?
+  status            OrderStatus     @default(PENDING)
+  createdAt         DateTime        @default(now())
+
+  @@index([userId])
+  @@index([courseId])
+  @@index([providerSessionId])
 }

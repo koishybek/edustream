@@ -14,8 +14,17 @@ The API. Everything (mobile + admin) talks to this. All routes are versioned und
 npm install
 cp .env.example .env          # then edit DATABASE_URL if needed
 npm run prisma:generate       # generate the Prisma client
-npm run prisma:push           # sync schema → dev database
+npm run prisma:migrate        # apply migrations to the dev DB
+npm run db:seed               # demo data (idempotent)
 ```
+
+### Demo accounts (after seed)
+
+| Role | Email | Password |
+|---|---|---|
+| Student (pre-enrolled, 50%) | `student@demo.io` | `Student123!` |
+| Admin | `admin@demo.io` | `Admin123!` |
+| Instructor | `elena@demo.io` | `Instructor123!` |
 
 ### Database
 
@@ -40,10 +49,24 @@ curl http://localhost:4000/api/v1/health
 # { "status":"ok", "service":"edustream-api", "version":"0.1.0", "database":"up", "timestamp":"..." }
 ```
 
+## API
+
+| Endpoint | Auth | Notes |
+|---|---|---|
+| `GET /api/v1/health` | — | DB ping |
+| `POST /api/v1/auth/register` | — | → tokens + user (role STUDENT) |
+| `POST /api/v1/auth/login` | — | → tokens + user |
+| `POST /api/v1/auth/refresh` | refresh token | → new access token |
+| `GET /api/v1/auth/me` | access token | current user |
+| `PATCH /api/v1/auth/me` | access token | name / locale / interests / knowledgeLevel |
+
+Catalog, purchase, learning and admin endpoints arrive in Phases 2–4.
+
 ## Test
 
 ```bash
 npm test                      # Jest unit tests
+npm run test:e2e              # auth flow against the dev DB (9 tests)
 ```
 
 ## Layout

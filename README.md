@@ -35,7 +35,8 @@ A self-contained local PostgreSQL 17 cluster is already provisioned on **port 54
 cd backend
 npm install
 npm run prisma:generate
-npm run prisma:push          # creates tables in the dev DB
+npm run prisma:migrate       # apply migrations to the dev DB
+npm run db:seed              # demo data (idempotent)
 npm run start:dev            # → http://localhost:4000/api/v1
 curl http://localhost:4000/api/v1/health
 
@@ -50,6 +51,16 @@ npm install
 npm run dev                  # → http://localhost:5173
 ```
 
+## Demo accounts (after `npm run db:seed`)
+
+| Role | Email | Password |
+|---|---|---|
+| Student | `student@demo.io` | `Student123!` |
+| Admin | `admin@demo.io` | `Admin123!` |
+| Instructor | `elena@demo.io` | `Instructor123!` |
+
+The demo student is pre-enrolled in *The Architecture of Circular Economies* at 50% progress.
+
 ## With Docker (any machine)
 
 ```bash
@@ -63,7 +74,7 @@ docker compose up -d         # PostgreSQL on localhost:5432
 Built **phase by phase**; each phase runs end-to-end before the next starts.
 
 - ✅ **Phase 0 — Scaffold:** monorepo, infra, NestJS `/api/v1/health` (Prisma-connected), mobile PWA themed skeleton, admin login shell.
-- ⬜ Phase 1 — Auth + onboarding
+- ✅ **Phase 1 — Auth + onboarding:** full data model + migration + seed; JWT auth (register/login/refresh/me), roles; PWA login/register/onboarding/profile with token refresh, auth-gated routing, RU/EN/KZ locale switcher.
 - ⬜ Phase 2 — Catalog
 - ⬜ Phase 3 — Purchase + learning
 - ⬜ Phase 4 — Admin
