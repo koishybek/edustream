@@ -75,9 +75,9 @@ Built **phase by phase**; each phase runs end-to-end before the next starts.
 
 - ✅ **Phase 0 — Scaffold:** monorepo, infra, NestJS `/api/v1/health` (Prisma-connected), mobile PWA themed skeleton, admin login shell.
 - ✅ **Phase 1 — Auth + onboarding:** full data model + migration + seed; JWT auth (register/login/refresh/me), roles; PWA login/register/onboarding/profile with token refresh, auth-gated routing, RU/EN/KZ locale switcher.
-- ⬜ Phase 2 — Catalog
-- ⬜ Phase 3 — Purchase + learning
-- ⬜ Phase 4 — Admin
+- ✅ **Phase 2 — Catalog:** `GET /courses` search/filter/sort/pagination, course detail (curriculum + reviews), filters sheet, real Home.
+- ✅ **Phase 3 — Purchase + learning:** checkout (mock provider → enrollment; Stripe stub behind it), My Learning, video player, progress recompute.
+- ✅ **Phase 4 — Admin:** dashboard stats, course CRUD (modules/lessons editor), users table — role-guarded.
 
 ## Conventions
 
