@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="EduStream">
+  <rect width="512" height="512" fill="#14533B"/>
+  <path d="M174 352c-7-112 71-196 180-190 7 110-71 196-180 190z" fill="#FFFFFF"/>
+  <path d="M200 330c40-44 95-80 152-106" fill="none" stroke="#14533B" stroke-width="15" stroke-linecap="round"/>
+</svg>

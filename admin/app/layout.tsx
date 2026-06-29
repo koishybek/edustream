@@ -20,8 +20,10 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        {/* Golos Text (display) + Manrope (body): both cover Cyrillic incl.
+            Kazakh, shared with the mobile PWA. */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>

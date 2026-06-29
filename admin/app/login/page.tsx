@@ -24,7 +24,7 @@ export default function LoginPage() {
           <div className="text-xs font-bold uppercase tracking-[0.18em] text-brand mb-3">
             EduStream Admin
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-text-primary">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-text-primary">
             Sign in
           </h1>
           <p className="mt-2 text-text-secondary">

@@ -11,7 +11,7 @@ This is a **real, runnable MVP slice** of the core learning loop:
 | Package | Stack | What it is |
 |---|---|---|
 | [`backend/`](backend/) | NestJS + Prisma + PostgreSQL | The API. Versioned under `/api/v1`. Single source of truth for mobile **and** admin. |
-| [`mobile/`](mobile/) | Flutter + Riverpod + GoRouter + dio | The student app. Feature-first architecture, ARB i18n (ru/en/kz). |
+| [`mobile/`](mobile/) | React + Vite + Tailwind **PWA** (TanStack Query, React Router, axios) | The student app — installable PWA. Feature-first, i18n (ru/en/kz). |
 | [`admin/`](admin/) | Next.js (App Router) + TypeScript + Tailwind | Minimal web admin for course CRUD + stats. Hits the same `/api/v1`. |
 | [`infra/`](infra/) | docker-compose + scripts | Local PostgreSQL (Docker) **or** a no-Docker local cluster helper. |
 
@@ -21,7 +21,7 @@ Plain folders — no JS monorepo tool (Flutter doesn't fit one). Each package ha
 
 - **Node.js ≥ 20** (tested on 22.x) — backend + admin.
 - **PostgreSQL 16/17** — via Docker (`infra/docker-compose.yml`) **or** a local install (`infra/` helper scripts).
-- **Flutter (stable, Dart 3)** — mobile app. [Install guide.](https://docs.flutter.dev/get-started/install)
+- _(mobile is a PWA — no Flutter/native SDK needed; Node covers it.)_
 
 ## Quick start (this machine — no Docker)
 
@@ -44,10 +44,10 @@ cd admin
 npm install
 npm run dev                  # → http://localhost:3000
 
-# 4. Mobile (separate terminal, needs Flutter SDK)
+# 4. Mobile PWA (separate terminal)
 cd mobile
-flutter pub get
-flutter run                  # pick a device/emulator
+npm install
+npm run dev                  # → http://localhost:5173
 ```
 
 ## With Docker (any machine)
@@ -62,7 +62,7 @@ docker compose up -d         # PostgreSQL on localhost:5432
 
 Built **phase by phase**; each phase runs end-to-end before the next starts.
 
-- ✅ **Phase 0 — Scaffold:** monorepo, infra, NestJS `/api/v1/health` (Prisma-connected), Flutter themed skeleton, admin login shell.
+- ✅ **Phase 0 — Scaffold:** monorepo, infra, NestJS `/api/v1/health` (Prisma-connected), mobile PWA themed skeleton, admin login shell.
 - ⬜ Phase 1 — Auth + onboarding
 - ⬜ Phase 2 — Catalog
 - ⬜ Phase 3 — Purchase + learning

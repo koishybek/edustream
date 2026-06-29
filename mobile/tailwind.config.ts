@@ -1,12 +1,12 @@
 import type { Config } from "tailwindcss";
 
 /**
- * Admin design tokens — mirror of the Flutter `tokens.dart` so both surfaces
- * share one EduStream design language: warm neutrals, ONE deep-green brand for
- * primary actions, and distinct semantic hues.
+ * Mobile (PWA) design tokens — same EduStream palette as the admin
+ * (`admin/tailwind.config.ts`) and the original `tokens.dart`: warm neutrals,
+ * ONE deep-green brand for primary actions, distinct semantic hues.
  */
 const config: Config = {
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
@@ -28,14 +28,12 @@ const config: Config = {
         error: { DEFAULT: "#C2453D", subtle: "#F7E2E0" },
         info: { DEFAULT: "#3B6FB0", subtle: "#E2EAF5" },
       },
-      borderRadius: {
-        sm: "8px",
-        md: "12px",
-        lg: "16px",
-        xl: "24px",
-      },
+      borderRadius: { sm: "8px", md: "12px", lg: "16px", xl: "24px" },
       fontFamily: {
+        // Body / UI — humanist, full Cyrillic incl. Kazakh.
         sans: ["Manrope", "ui-sans-serif", "system-ui", "sans-serif"],
+        // Display — Cyrillic-native face with squarish character for headings
+        // + the wordmark. Falls back to Manrope.
         display: ["Golos Text", "Manrope", "ui-sans-serif", "sans-serif"],
       },
       boxShadow: {
