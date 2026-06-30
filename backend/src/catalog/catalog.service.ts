@@ -20,8 +20,6 @@ const courseCardSelect = {
   title: true,
   slug: true,
   description: true,
-  priceCents: true,
-  currency: true,
   level: true,
   durationMinutes: true,
   ratingAvg: true,
@@ -84,12 +82,6 @@ export class CatalogService {
     if (query.categoryId) where.categoryId = query.categoryId;
     if (query.level) where.level = query.level;
 
-    if (query.minPrice !== undefined || query.maxPrice !== undefined) {
-      where.priceCents = {
-        ...(query.minPrice !== undefined ? { gte: query.minPrice } : {}),
-        ...(query.maxPrice !== undefined ? { lte: query.maxPrice } : {}),
-      };
-    }
     if (query.minDuration !== undefined || query.maxDuration !== undefined) {
       where.durationMinutes = {
         ...(query.minDuration !== undefined ? { gte: query.minDuration } : {}),
@@ -150,6 +142,9 @@ export class CatalogService {
                 isFreePreview: true,
               },
             },
+            quiz: {
+              select: { id: true, _count: { select: { questions: true } } },
+            },
           },
         },
       },
@@ -158,7 +153,19 @@ export class CatalogService {
     if (!course) {
       throw new NotFoundException('Course not found');
     }
-    return course;
+
+    // Flatten each module's quiz to a small { id, questionCount } shape.
+    const { modules, ...rest } = course;
+    return {
+      ...rest,
+      modules: modules.map((m) => {
+        const { quiz, ...mod } = m;
+        return {
+          ...mod,
+          quiz: quiz ? { id: quiz.id, questionCount: quiz._count.questions } : null,
+        };
+      }),
+    };
   }
 
   async listReviews(

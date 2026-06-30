@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -6,12 +7,33 @@ import {
 import { Category, Course, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RecordProgressDto } from './dto/record-progress.dto';
+import { SubmitQuizDto } from './dto/submit-quiz.dto';
 
 type CourseWithRels = Course & { category: Category; instructor: User };
 
 @Injectable()
 export class LearningService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** POST /courses/:id/enroll — free, idempotent. */
+  async enroll(userId: string, courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true },
+    });
+    if (!course) throw new NotFoundException('Course not found');
+
+    const existing = await this.prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+    });
+    if (existing) {
+      return { enrollmentId: existing.id, alreadyEnrolled: true };
+    }
+    const created = await this.prisma.enrollment.create({
+      data: { userId, courseId },
+    });
+    return { enrollmentId: created.id, alreadyEnrolled: false };
+  }
 
   /** GET /me/enrollments */
   async myEnrollments(userId: string) {
@@ -28,39 +50,61 @@ export class LearningService {
     }));
   }
 
-  /** GET /me/courses/:id/progress — enrolled-only; exposes videoUrl. */
+  /**
+   * GET /me/courses/:id/progress — enrolled-only. Returns the curriculum
+   * grouped by module, each module carrying its lessons (with videoUrl) and
+   * its quiz status (passed or not).
+   */
   async courseProgress(userId: string, courseId: string) {
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { userId_courseId: { userId, courseId } },
     });
     if (!enrollment) throw new ForbiddenException('Not enrolled in this course');
 
-    const lessons = await this.prisma.lesson.findMany({
-      where: { module: { courseId } },
-      orderBy: [{ module: { order: 'asc' } }, { order: 'asc' }],
-      include: { module: true },
+    const modules = await this.prisma.module.findMany({
+      where: { courseId },
+      orderBy: { order: 'asc' },
+      include: {
+        lessons: { orderBy: { order: 'asc' } },
+        quiz: { select: { id: true, title: true, _count: { select: { questions: true } } } },
+      },
     });
-    const progress = await this.prisma.lessonProgress.findMany({
+
+    const lessonProgress = await this.prisma.lessonProgress.findMany({
       where: { enrollmentId: enrollment.id },
     });
-    const byLesson = new Map(progress.map((p) => [p.lessonId, p]));
+    const byLesson = new Map(lessonProgress.map((p) => [p.lessonId, p]));
+    const passedQuizIds = await this.passedQuizIds(enrollment.id);
 
     return {
       progressPercent: enrollment.progressPercent,
       status: enrollment.status,
-      lessons: lessons.map((l) => {
-        const p = byLesson.get(l.id);
-        return {
-          lessonId: l.id,
-          title: l.title,
-          order: l.order,
-          moduleTitle: l.module.title,
-          videoUrl: l.videoUrl,
-          durationSeconds: l.durationSeconds,
-          completed: p?.completed ?? false,
-          watchedSeconds: p?.watchedSeconds ?? 0,
-        };
-      }),
+      modules: modules.map((m) => ({
+        id: m.id,
+        title: m.title,
+        order: m.order,
+        lessons: m.lessons.map((l) => {
+          const p = byLesson.get(l.id);
+          return {
+            lessonId: l.id,
+            title: l.title,
+            order: l.order,
+            moduleTitle: m.title,
+            videoUrl: l.videoUrl,
+            durationSeconds: l.durationSeconds,
+            completed: p?.completed ?? false,
+            watchedSeconds: p?.watchedSeconds ?? 0,
+          };
+        }),
+        quiz: m.quiz
+          ? {
+              id: m.quiz.id,
+              title: m.quiz.title,
+              questionCount: m.quiz._count.questions,
+              passed: passedQuizIds.has(m.quiz.id),
+            }
+          : null,
+      })),
     };
   }
 
@@ -96,22 +140,159 @@ export class LearningService {
       },
     });
 
-    const total = await this.prisma.lesson.count({
-      where: { module: { courseId } },
+    const progressPercent = await this.recompute(enrollment.id, courseId);
+    return { progressPercent };
+  }
+
+  /** GET /me/courses/:courseId/quiz/:quizId — enrolled-only, no isCorrect leak. */
+  async getQuiz(userId: string, courseId: string, quizId: string) {
+    await this.requireEnrollment(userId, courseId);
+    const quiz = await this.prisma.quiz.findFirst({
+      where: { id: quizId, module: { courseId } },
+      include: {
+        questions: {
+          orderBy: { order: 'asc' },
+          include: {
+            options: {
+              orderBy: { order: 'asc' },
+              select: { id: true, text: true, order: true },
+            },
+          },
+        },
+      },
     });
-    const done = await this.prisma.lessonProgress.count({
-      where: { enrollmentId: enrollment.id, completed: true },
+    if (!quiz) throw new NotFoundException('Quiz not found');
+
+    return {
+      id: quiz.id,
+      title: quiz.title,
+      passingScore: quiz.passingScore,
+      questions: quiz.questions.map((q) => ({
+        id: q.id,
+        text: q.text,
+        order: q.order,
+        options: q.options,
+      })),
+    };
+  }
+
+  /** POST /me/courses/:courseId/quiz/:quizId/submit — grade, store, recompute. */
+  async submitQuiz(
+    userId: string,
+    courseId: string,
+    quizId: string,
+    dto: SubmitQuizDto,
+  ) {
+    const enrollment = await this.requireEnrollment(userId, courseId);
+    const quiz = await this.prisma.quiz.findFirst({
+      where: { id: quizId, module: { courseId } },
+      include: {
+        questions: {
+          orderBy: { order: 'asc' },
+          include: { options: true },
+        },
+      },
     });
-    const progressPercent = total === 0 ? 0 : Math.round((done / total) * 100);
+    if (!quiz) throw new NotFoundException('Quiz not found');
+    if (quiz.questions.length === 0) {
+      throw new BadRequestException('Quiz has no questions');
+    }
+
+    const chosenByQuestion = new Map(
+      dto.answers.map((a) => [a.questionId, a.optionId]),
+    );
+
+    let correctCount = 0;
+    const results = quiz.questions.map((q) => {
+      const correctOption = q.options.find((o) => o.isCorrect);
+      const chosenOptionId = chosenByQuestion.get(q.id) ?? null;
+      const correct =
+        chosenOptionId !== null && correctOption?.id === chosenOptionId;
+      if (correct) correctCount += 1;
+      return {
+        questionId: q.id,
+        correctOptionId: correctOption?.id ?? null,
+        chosenOptionId,
+        correct,
+        explanation: q.explanation,
+      };
+    });
+
+    const score = Math.round((correctCount / quiz.questions.length) * 100);
+    const passed = score >= quiz.passingScore;
+
+    await this.prisma.quizAttempt.create({
+      data: { enrollmentId: enrollment.id, quizId, score, passed },
+    });
+
+    const progressPercent = await this.recompute(enrollment.id, courseId);
+
+    return {
+      score,
+      passed,
+      passingScore: quiz.passingScore,
+      correctCount,
+      totalQuestions: quiz.questions.length,
+      progressPercent,
+      results,
+    };
+  }
+
+  // ---------- internals ----------
+
+  /** The set of quizIds this enrollment has at least one passing attempt for. */
+  private async passedQuizIds(enrollmentId: string): Promise<Set<string>> {
+    const passed = await this.prisma.quizAttempt.findMany({
+      where: { enrollmentId, passed: true },
+      select: { quizId: true },
+      distinct: ['quizId'],
+    });
+    return new Set(passed.map((p) => p.quizId));
+  }
+
+  /**
+   * Recompute enrollment progress. Units = all lessons + all quizzes in the
+   * course. Done = completed lessons + passed quizzes. A course is COMPLETED
+   * only when every lesson is watched AND every quiz is passed.
+   */
+  private async recompute(
+    enrollmentId: string,
+    courseId: string,
+  ): Promise<number> {
+    const [totalLessons, totalQuizzes, doneLessons, passedQuizzes] =
+      await this.prisma.$transaction([
+        this.prisma.lesson.count({ where: { module: { courseId } } }),
+        this.prisma.quiz.count({ where: { module: { courseId } } }),
+        this.prisma.lessonProgress.count({
+          where: { enrollmentId, completed: true },
+        }),
+        this.prisma.quizAttempt.findMany({
+          where: { enrollmentId, passed: true },
+          select: { quizId: true },
+          distinct: ['quizId'],
+        }),
+      ]);
+
+    const units = totalLessons + totalQuizzes;
+    const done = doneLessons + passedQuizzes.length;
+    const progressPercent = units === 0 ? 0 : Math.round((done / units) * 100);
 
     await this.prisma.enrollment.update({
-      where: { id: enrollment.id },
+      where: { id: enrollmentId },
       data: {
         progressPercent,
         status: progressPercent >= 100 ? 'COMPLETED' : 'ACTIVE',
       },
     });
-    return { progressPercent };
+    return progressPercent;
+  }
+
+  private async requireEnrollment(userId: string, courseId: string) {
+    const enrollment = await this.prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+    });
+    if (!enrollment) throw new ForbiddenException('Not enrolled in this course');
+    return enrollment;
   }
 
   private toCard(course: CourseWithRels) {
@@ -120,8 +301,6 @@ export class LearningService {
       title: course.title,
       slug: course.slug,
       description: course.description,
-      priceCents: course.priceCents,
-      currency: course.currency,
       level: course.level,
       durationMinutes: course.durationMinutes,
       ratingAvg: course.ratingAvg,

@@ -3,23 +3,51 @@ import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-// Public sample MP4s (Google's gtv-videos bucket) for the lesson player.
-const SAMPLE_VIDEOS = [
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+// Real, topical, long-standing TED / TED-Ed / Ellen MacArthur Foundation videos
+// on ESG & sustainability, mapped to course categories. Swap freely.
+const youtube = (id: string) => `https://www.youtube.com/watch?v=${id}`;
+
+const VIDEOS_BY_CATEGORY: Record<string, string[]> = {
+  'esg-reporting': ['HyDteUfammQ', 'Kl3VVrggKz4'], // Corporate ESG; First sustainable generation
+  'circular-economy': ['aSCQd6A19YQ', 'Kl3VVrggKz4'], // Circular economy (MacArthur)
+  climate: ['xKxrkht7CpY', 'Kl3VVrggKz4'], // How solar panels work; sustainability
+  social: ['HyDteUfammQ', 'Kl3VVrggKz4'],
+  water: ['otrpxtAmDAk', 'OCzYdNSJF-k'], // Fresh water scarcity; running out of clean water
+  biodiversity: ['GK_vRtHJZu4', 'Kl3VVrggKz4'], // Why biodiversity matters
+};
+const GENERAL_VIDEOS = [
+  'Kl3VVrggKz4',
+  'xKxrkht7CpY',
+  'aSCQd6A19YQ',
+  'HyDteUfammQ',
+  'GK_vRtHJZu4',
+  'otrpxtAmDAk',
 ];
 
-let videoCursor = 0;
-const nextVideo = () => SAMPLE_VIDEOS[videoCursor++ % SAMPLE_VIDEOS.length];
+/** Round-robin a video for a given category, falling back to the general pool. */
+function makeVideoPicker(categorySlug: string) {
+  const pool = VIDEOS_BY_CATEGORY[categorySlug] ?? GENERAL_VIDEOS;
+  let i = 0;
+  return () => youtube(pool[i++ % pool.length]);
+}
+
 const cover = (seed: string) => `https://picsum.photos/seed/${seed}/800/450`;
 const hash = (pw: string) => bcrypt.hash(pw, 10);
 
+interface OptionSeed {
+  text: string;
+  correct?: boolean;
+}
+interface QuestionSeed {
+  text: string;
+  explanation?: string;
+  options: OptionSeed[];
+}
+interface QuizSeed {
+  title?: string;
+  passingScore?: number;
+  questions: QuestionSeed[];
+}
 interface LessonSeed {
   title: string;
   durationSeconds: number;
@@ -27,6 +55,7 @@ interface LessonSeed {
 interface ModuleSeed {
   title: string;
   lessons: LessonSeed[];
+  quiz: QuizSeed;
 }
 interface CourseSeed {
   title: string;
@@ -34,13 +63,10 @@ interface CourseSeed {
   description: string;
   categorySlug: string;
   level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
-  priceCents: number;
   instructor: number; // index into instructors[]
   modules: ModuleSeed[];
 }
 
-// RU-first names (matches the prototype); icons are Lucide names used by the
-// PWA's category cover system (see mobile ui/Cover.tsx).
 const CATEGORIES = [
   { name: 'Климат', slug: 'climate', icon: 'cloud' },
   { name: 'Вода', slug: 'water', icon: 'droplets' },
@@ -58,7 +84,6 @@ const COURSES: CourseSeed[] = [
       'Master the frameworks and practical tools needed to integrate ESG metrics into core business strategy and drive meaningful environmental impact.',
     categorySlug: 'esg-reporting',
     level: 'INTERMEDIATE',
-    priceCents: 14900000,
     instructor: 0,
     modules: [
       {
@@ -68,6 +93,45 @@ const COURSES: CourseSeed[] = [
           { title: 'The business case for sustainability', durationSeconds: 900 },
           { title: 'Stakeholders vs shareholders', durationSeconds: 660 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'What does the "G" in ESG stand for?',
+              options: [
+                { text: 'Growth' },
+                { text: 'Governance', correct: true },
+                { text: 'Green' },
+                { text: 'Global' },
+              ],
+              explanation:
+                'ESG = Environmental, Social and Governance — governance covers board structure, ethics and accountability.',
+            },
+            {
+              text: 'Which best describes the "business case" for sustainability?',
+              options: [
+                { text: 'It is purely a marketing exercise' },
+                {
+                  text: 'It can lower risk, cut costs and open new markets',
+                  correct: true,
+                },
+                { text: 'It only matters to regulators' },
+                { text: 'It always reduces profit' },
+              ],
+            },
+            {
+              text: 'A "stakeholder" view of the firm prioritises:',
+              options: [
+                { text: 'Only shareholders’ short-term returns' },
+                {
+                  text: 'The interests of everyone affected — employees, communities, customers',
+                  correct: true,
+                },
+                { text: 'Government subsidies above all' },
+                { text: 'Share buybacks' },
+              ],
+            },
+          ],
+        },
       },
       {
         title: 'Carbon Accounting Fundamentals',
@@ -76,6 +140,48 @@ const COURSES: CourseSeed[] = [
           { title: 'Building your first inventory', durationSeconds: 1200 },
           { title: 'Setting science-based targets', durationSeconds: 840 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'Scope 2 emissions come from:',
+              options: [
+                { text: 'A company’s own vehicles and boilers' },
+                {
+                  text: 'Purchased electricity, steam, heating and cooling',
+                  correct: true,
+                },
+                { text: 'Suppliers and product use' },
+                { text: 'Employee commuting only' },
+              ],
+              explanation:
+                'Scope 1 = direct, Scope 2 = purchased energy, Scope 3 = everything else in the value chain.',
+            },
+            {
+              text: 'Scope 3 emissions are usually:',
+              options: [
+                {
+                  text: 'The largest and hardest-to-measure share for most firms',
+                  correct: true,
+                },
+                { text: 'Always negligible' },
+                { text: 'Banned under the GHG Protocol' },
+                { text: 'Only relevant to energy companies' },
+              ],
+            },
+            {
+              text: 'A "science-based target" is one that:',
+              options: [
+                { text: 'Is chosen by marketing for a press release' },
+                {
+                  text: 'Aligns reductions with limiting warming to 1.5–2°C',
+                  correct: true,
+                },
+                { text: 'Requires no measurement' },
+                { text: 'Only counts offsets' },
+              ],
+            },
+          ],
+        },
       },
       {
         title: 'Supply Chain Transparency',
@@ -83,6 +189,34 @@ const COURSES: CourseSeed[] = [
           { title: 'Mapping your value chain', durationSeconds: 960 },
           { title: 'Supplier engagement at scale', durationSeconds: 780 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'Why map your value chain before setting targets?',
+              options: [
+                {
+                  text: 'You can’t manage emissions or risks you haven’t identified',
+                  correct: true,
+                },
+                { text: 'It is legally forbidden to set targets first' },
+                { text: 'Mapping replaces the need for data' },
+                { text: 'It guarantees zero emissions' },
+              ],
+            },
+            {
+              text: 'Effective supplier engagement at scale relies on:',
+              options: [
+                { text: 'Ignoring small suppliers entirely' },
+                {
+                  text: 'Clear data requests, shared standards and incentives',
+                  correct: true,
+                },
+                { text: 'One-off audits with no follow-up' },
+                { text: 'Switching suppliers every quarter' },
+              ],
+            },
+          ],
+        },
       },
     ],
   },
@@ -93,7 +227,6 @@ const COURSES: CourseSeed[] = [
       'A deep dive into integrating environmental, social, and governance principles into core business strategies, taught by industry pioneers.',
     categorySlug: 'esg-reporting',
     level: 'ADVANCED',
-    priceCents: 29900000,
     instructor: 1,
     modules: [
       {
@@ -103,6 +236,48 @@ const COURSES: CourseSeed[] = [
           { title: 'The EU CSRD in practice', durationSeconds: 1140 },
           { title: 'Choosing a framework', durationSeconds: 720 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'The TCFD framework focuses specifically on:',
+              options: [
+                { text: 'Water usage reporting' },
+                {
+                  text: 'Climate-related financial risks and disclosures',
+                  correct: true,
+                },
+                { text: 'Employee diversity quotas' },
+                { text: 'Tax transparency' },
+              ],
+              explanation:
+                'TCFD = Task Force on Climate-related Financial Disclosures.',
+            },
+            {
+              text: 'The EU CSRD primarily requires companies to:',
+              options: [
+                {
+                  text: 'Report sustainability information with the same rigor as financials',
+                  correct: true,
+                },
+                { text: 'Stop publishing annual reports' },
+                { text: 'Only disclose profit figures' },
+                { text: 'Avoid third-party assurance' },
+              ],
+            },
+            {
+              text: 'GRI standards are best described as:',
+              options: [
+                { text: 'A climate-only metric' },
+                {
+                  text: 'A broad, multi-stakeholder sustainability reporting standard',
+                  correct: true,
+                },
+                { text: 'A stock index' },
+                { text: 'A carbon offset registry' },
+              ],
+            },
+          ],
+        },
       },
       {
         title: 'Materiality & Assurance',
@@ -111,6 +286,43 @@ const COURSES: CourseSeed[] = [
           { title: 'Preparing for external assurance', durationSeconds: 900 },
           { title: 'Avoiding greenwashing claims', durationSeconds: 840 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: '"Double materiality" means assessing:',
+              options: [
+                {
+                  text: 'Impact on the company AND the company’s impact on the world',
+                  correct: true,
+                },
+                { text: 'Two separate financial statements' },
+                { text: 'Only financial impact' },
+                { text: 'Materials used in two factories' },
+              ],
+            },
+            {
+              text: 'Greenwashing is:',
+              options: [
+                { text: 'A water-recycling technique' },
+                {
+                  text: 'Making misleading or unsubstantiated environmental claims',
+                  correct: true,
+                },
+                { text: 'A type of external audit' },
+                { text: 'A reporting standard' },
+              ],
+            },
+            {
+              text: 'External assurance of an ESG report mainly improves its:',
+              options: [
+                { text: 'Length' },
+                { text: 'Credibility and reliability', correct: true },
+                { text: 'Marketing budget' },
+                { text: 'Share price guarantee' },
+              ],
+            },
+          ],
+        },
       },
     ],
   },
@@ -121,7 +333,6 @@ const COURSES: CourseSeed[] = [
       'Understanding closed-loop systems and regenerative material flows in modern urban environments.',
     categorySlug: 'circular-economy',
     level: 'INTERMEDIATE',
-    priceCents: 19900000,
     instructor: 2,
     modules: [
       {
@@ -131,6 +342,43 @@ const COURSES: CourseSeed[] = [
           { title: 'Designing for disassembly', durationSeconds: 1080 },
           { title: 'Case study: The Edge, Amsterdam', durationSeconds: 960 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'A linear economy follows which pattern?',
+              options: [
+                { text: 'Take – make – waste', correct: true },
+                { text: 'Reduce – reuse – regenerate' },
+                { text: 'Borrow – return – repeat' },
+                { text: 'Grow – harvest – replant' },
+              ],
+            },
+            {
+              text: 'The circular economy goes "beyond recycling" by aiming to:',
+              options: [
+                {
+                  text: 'Design out waste and keep materials in use',
+                  correct: true,
+                },
+                { text: 'Burn more waste for energy' },
+                { text: 'Increase single-use packaging' },
+                { text: 'Export waste abroad' },
+              ],
+            },
+            {
+              text: '"Designing for disassembly" helps because:',
+              options: [
+                { text: 'Products look more modern' },
+                {
+                  text: 'Components can be repaired, reused or recycled at end of life',
+                  correct: true,
+                },
+                { text: 'It makes products heavier' },
+                { text: 'It prevents any maintenance' },
+              ],
+            },
+          ],
+        },
       },
       {
         title: 'Regenerative Systems',
@@ -139,6 +387,46 @@ const COURSES: CourseSeed[] = [
           { title: 'Regenerative urban planning', durationSeconds: 1440 },
           { title: 'Measuring circularity', durationSeconds: 780 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'A "material passport" records:',
+              options: [
+                {
+                  text: 'What a product is made of, so materials can be recovered',
+                  correct: true,
+                },
+                { text: 'A worker’s travel permits' },
+                { text: 'The retail price history' },
+                { text: 'Nothing useful for recycling' },
+              ],
+            },
+            {
+              text: 'Regenerative design aims to:',
+              options: [
+                { text: 'Do slightly less harm' },
+                {
+                  text: 'Leave systems better than before — net positive',
+                  correct: true,
+                },
+                { text: 'Maximise extraction' },
+                { text: 'Avoid all measurement' },
+              ],
+            },
+            {
+              text: 'Circularity metrics are needed to:',
+              options: [
+                {
+                  text: 'Track progress and compare strategies objectively',
+                  correct: true,
+                },
+                { text: 'Replace the need for any action' },
+                { text: 'Hide material flows' },
+                { text: 'Guarantee profit' },
+              ],
+            },
+          ],
+        },
       },
     ],
   },
@@ -149,7 +437,6 @@ const COURSES: CourseSeed[] = [
       'A beginner-friendly tour of solar, wind, hydro and storage — how the modern clean grid actually fits together.',
     categorySlug: 'climate',
     level: 'BEGINNER',
-    priceCents: 14900000,
     instructor: 0,
     modules: [
       {
@@ -159,6 +446,42 @@ const COURSES: CourseSeed[] = [
           { title: 'Solar PV fundamentals', durationSeconds: 900 },
           { title: 'Wind, on- and offshore', durationSeconds: 840 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'A solar photovoltaic (PV) cell converts:',
+              options: [
+                { text: 'Heat directly into motion' },
+                { text: 'Sunlight directly into electricity', correct: true },
+                { text: 'Wind into hydrogen' },
+                { text: 'Water into fuel' },
+              ],
+              explanation:
+                'PV cells use the photovoltaic effect to turn photons into an electric current.',
+            },
+            {
+              text: 'Roughly how much more solar energy hits Earth than humanity uses?',
+              options: [
+                { text: 'About the same' },
+                { text: 'Around 10 times more' },
+                { text: 'Thousands of times more', correct: true },
+                { text: 'Less than we use' },
+              ],
+            },
+            {
+              text: 'Offshore wind is attractive mainly because:',
+              options: [
+                {
+                  text: 'Winds at sea are stronger and steadier',
+                  correct: true,
+                },
+                { text: 'It needs no maintenance' },
+                { text: 'It works without wind' },
+                { text: 'It is always cheaper than onshore' },
+              ],
+            },
+          ],
+        },
       },
       {
         title: 'The Clean Grid',
@@ -166,6 +489,34 @@ const COURSES: CourseSeed[] = [
           { title: 'Storage and batteries', durationSeconds: 1020 },
           { title: 'Balancing supply and demand', durationSeconds: 780 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'Why is energy storage important on a renewable grid?',
+              options: [
+                {
+                  text: 'Sun and wind are variable, so supply must be shifted in time',
+                  correct: true,
+                },
+                { text: 'Batteries create new energy from nothing' },
+                { text: 'Storage removes the need for generation' },
+                { text: 'It only matters at night for wind' },
+              ],
+            },
+            {
+              text: '"Balancing" a grid means:',
+              options: [
+                { text: 'Keeping the wires physically level' },
+                {
+                  text: 'Matching electricity supply to demand second-by-second',
+                  correct: true,
+                },
+                { text: 'Charging customers equally' },
+                { text: 'Shutting down at peak times' },
+              ],
+            },
+          ],
+        },
       },
     ],
   },
@@ -176,7 +527,6 @@ const COURSES: CourseSeed[] = [
       'Turn community impact, labor rights and diversity goals into rigorous, defensible metrics leadership can act on.',
     categorySlug: 'social',
     level: 'INTERMEDIATE',
-    priceCents: 19900000,
     instructor: 2,
     modules: [
       {
@@ -186,6 +536,42 @@ const COURSES: CourseSeed[] = [
           { title: 'Theory of change', durationSeconds: 960 },
           { title: 'Choosing indicators', durationSeconds: 720 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'Which is an OUTPUT rather than an outcome?',
+              options: [
+                { text: 'Number of people trained', correct: true },
+                { text: 'Increased household income' },
+                { text: 'Improved health' },
+                { text: 'Reduced unemployment' },
+              ],
+              explanation:
+                'Outputs are what you produce; outcomes are the changes that result.',
+            },
+            {
+              text: 'A "theory of change" describes:',
+              options: [
+                {
+                  text: 'How and why activities are expected to lead to impact',
+                  correct: true,
+                },
+                { text: 'A company’s share structure' },
+                { text: 'A marketing slogan' },
+                { text: 'A random list of tasks' },
+              ],
+            },
+            {
+              text: 'Good impact indicators should be:',
+              options: [
+                { text: 'Vague and unmeasurable' },
+                { text: 'Specific, measurable and relevant', correct: true },
+                { text: 'Chosen to flatter the org' },
+                { text: 'Changed every week' },
+              ],
+            },
+          ],
+        },
       },
       {
         title: 'Measurement in Practice',
@@ -193,6 +579,31 @@ const COURSES: CourseSeed[] = [
           { title: 'Survey design that works', durationSeconds: 1080 },
           { title: 'Reporting to stakeholders', durationSeconds: 660 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'A leading cause of biased survey data is:',
+              options: [
+                { text: 'Using a neutral, clear question' },
+                { text: 'Leading or loaded questions', correct: true },
+                { text: 'Anonymity' },
+                { text: 'A representative sample' },
+              ],
+            },
+            {
+              text: 'Reporting to stakeholders works best when it is:',
+              options: [
+                {
+                  text: 'Honest about both successes and shortfalls',
+                  correct: true,
+                },
+                { text: 'Only positive news' },
+                { text: 'As long as possible' },
+                { text: 'Hidden from the public' },
+              ],
+            },
+          ],
+        },
       },
     ],
   },
@@ -203,7 +614,6 @@ const COURSES: CourseSeed[] = [
       'Green bonds, ESG-linked loans and impact investing — how capital is being redirected toward the transition.',
     categorySlug: 'esg-reporting',
     level: 'ADVANCED',
-    priceCents: 34900000,
     instructor: 0,
     modules: [
       {
@@ -213,6 +623,46 @@ const COURSES: CourseSeed[] = [
           { title: 'ESG integration in portfolios', durationSeconds: 1260 },
           { title: 'Taxonomies and labels', durationSeconds: 840 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'A green bond raises money specifically to:',
+              options: [
+                {
+                  text: 'Finance environmentally beneficial projects',
+                  correct: true,
+                },
+                { text: 'Pay executive bonuses' },
+                { text: 'Buy back shares' },
+                { text: 'Fund any project at all' },
+              ],
+            },
+            {
+              text: 'A sustainability-linked bond ties its interest rate to:',
+              options: [
+                {
+                  text: 'Whether the issuer hits ESG performance targets',
+                  correct: true,
+                },
+                { text: 'The CEO’s salary' },
+                { text: 'The weather' },
+                { text: 'Nothing measurable' },
+              ],
+            },
+            {
+              text: 'A green "taxonomy" (e.g. the EU Taxonomy) is:',
+              options: [
+                { text: 'A tax on carbon' },
+                {
+                  text: 'A classification of which activities count as sustainable',
+                  correct: true,
+                },
+                { text: 'A list of banned companies' },
+                { text: 'A stock exchange' },
+              ],
+            },
+          ],
+        },
       },
       {
         title: 'Risk & Return',
@@ -220,6 +670,34 @@ const COURSES: CourseSeed[] = [
           { title: 'Pricing climate risk', durationSeconds: 1020 },
           { title: 'Transition vs physical risk', durationSeconds: 900 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: '"Physical" climate risk refers to:',
+              options: [
+                {
+                  text: 'Damage from floods, storms, heat and other hazards',
+                  correct: true,
+                },
+                { text: 'The risk of new carbon taxes' },
+                { text: 'Reputational damage only' },
+                { text: 'Currency fluctuations' },
+              ],
+            },
+            {
+              text: '"Transition" risk arises from:',
+              options: [
+                {
+                  text: 'Policy, technology and market shifts toward a low-carbon economy',
+                  correct: true,
+                },
+                { text: 'Hurricanes and wildfires' },
+                { text: 'Rising sea levels' },
+                { text: 'Droughts' },
+              ],
+            },
+          ],
+        },
       },
     ],
   },
@@ -230,7 +708,6 @@ const COURSES: CourseSeed[] = [
       'Resource management and scarcity solutions for a warming, water-stressed Central Asia and beyond.',
     categorySlug: 'water',
     level: 'INTERMEDIATE',
-    priceCents: 17900000,
     instructor: 1,
     modules: [
       {
@@ -240,6 +717,46 @@ const COURSES: CourseSeed[] = [
           { title: 'The Aral Sea, a cautionary tale', durationSeconds: 1080 },
           { title: 'Water footprints', durationSeconds: 720 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'Although ~71% of Earth is covered by water, fresh water is scarce because:',
+              options: [
+                {
+                  text: 'Most water is salty or locked in ice/groundwater',
+                  correct: true,
+                },
+                { text: 'There is no water in rivers' },
+                { text: 'Fresh water cannot be stored' },
+                { text: 'Rain has stopped globally' },
+              ],
+            },
+            {
+              text: 'The shrinking of the Aral Sea was driven mainly by:',
+              options: [
+                {
+                  text: 'Diverting its feeder rivers for irrigation',
+                  correct: true,
+                },
+                { text: 'A single dry year' },
+                { text: 'Rising sea levels' },
+                { text: 'An earthquake' },
+              ],
+            },
+            {
+              text: 'A "water footprint" measures:',
+              options: [
+                {
+                  text: 'The total fresh water used to make a product or service',
+                  correct: true,
+                },
+                { text: 'Shoe sizes near rivers' },
+                { text: 'Only drinking water' },
+                { text: 'Rainfall in a city' },
+              ],
+            },
+          ],
+        },
       },
       {
         title: 'Solutions',
@@ -247,6 +764,34 @@ const COURSES: CourseSeed[] = [
           { title: 'Efficient irrigation', durationSeconds: 900 },
           { title: 'Reuse and desalination', durationSeconds: 960 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'Drip irrigation saves water mainly by:',
+              options: [
+                {
+                  text: 'Delivering water slowly to roots, cutting evaporation',
+                  correct: true,
+                },
+                { text: 'Flooding entire fields' },
+                { text: 'Using only rainwater' },
+                { text: 'Spraying water into the air' },
+              ],
+            },
+            {
+              text: 'A key drawback of desalination is that it:',
+              options: [
+                { text: 'Produces no fresh water' },
+                {
+                  text: 'Is energy-intensive and produces concentrated brine',
+                  correct: true,
+                },
+                { text: 'Only works on fresh water' },
+                { text: 'Is illegal everywhere' },
+              ],
+            },
+          ],
+        },
       },
     ],
   },
@@ -257,7 +802,6 @@ const COURSES: CourseSeed[] = [
       'Why nature is the next frontier of corporate responsibility — measuring and protecting biodiversity at scale.',
     categorySlug: 'biodiversity',
     level: 'BEGINNER',
-    priceCents: 12900000,
     instructor: 2,
     modules: [
       {
@@ -267,6 +811,46 @@ const COURSES: CourseSeed[] = [
           { title: 'The TNFD framework', durationSeconds: 1020 },
           { title: 'Nature-related dependencies', durationSeconds: 840 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'Higher biodiversity generally makes an ecosystem:',
+              options: [
+                {
+                  text: 'More resilient to shocks and change',
+                  correct: true,
+                },
+                { text: 'More fragile' },
+                { text: 'Unable to recover' },
+                { text: 'Identical to a monoculture' },
+              ],
+            },
+            {
+              text: '"Ecosystem services" are:',
+              options: [
+                {
+                  text: 'Benefits nature provides — pollination, clean water, climate regulation',
+                  correct: true,
+                },
+                { text: 'Paid subscriptions for parks' },
+                { text: 'A type of insurance policy' },
+                { text: 'Government departments' },
+              ],
+            },
+            {
+              text: 'The TNFD helps organisations to:',
+              options: [
+                {
+                  text: 'Assess and disclose nature-related risks and dependencies',
+                  correct: true,
+                },
+                { text: 'Trade carbon credits only' },
+                { text: 'Avoid all reporting' },
+                { text: 'Measure employee turnover' },
+              ],
+            },
+          ],
+        },
       },
       {
         title: 'Taking Action',
@@ -274,6 +858,34 @@ const COURSES: CourseSeed[] = [
           { title: 'Nature-positive strategies', durationSeconds: 900 },
           { title: 'Restoration and offsets', durationSeconds: 780 },
         ],
+        quiz: {
+          questions: [
+            {
+              text: 'A "nature-positive" goal means:',
+              options: [
+                {
+                  text: 'Halting and reversing nature loss — net gain for biodiversity',
+                  correct: true,
+                },
+                { text: 'Slightly slowing damage' },
+                { text: 'Ignoring ecosystems' },
+                { text: 'Only planting one species' },
+              ],
+            },
+            {
+              text: 'A risk of relying on biodiversity "offsets" is that:',
+              options: [
+                {
+                  text: 'Restored habitat may not equal what was destroyed',
+                  correct: true,
+                },
+                { text: 'They always perfectly replace nature' },
+                { text: 'They are free and instant' },
+                { text: 'They remove the need to measure' },
+              ],
+            },
+          ],
+        },
       },
     ],
   },
@@ -295,15 +907,18 @@ const REVIEW_COMMENTS = [
   'Clear, practical and well paced. Highly recommend.',
   'Exactly what I needed to move from theory to action.',
   'Dense but rewarding — come ready to take notes.',
-  'The case studies alone are worth the price.',
+  'The case studies alone are worth it.',
 ];
 
 async function main() {
   // Clean (FK-safe order) so the seed is re-runnable.
+  await prisma.quizAttempt.deleteMany();
   await prisma.lessonProgress.deleteMany();
   await prisma.enrollment.deleteMany();
   await prisma.review.deleteMany();
-  await prisma.order.deleteMany();
+  await prisma.questionOption.deleteMany();
+  await prisma.question.deleteMany();
+  await prisma.quiz.deleteMany();
   await prisma.lesson.deleteMany();
   await prisma.module.deleteMany();
   await prisma.course.deleteMany();
@@ -372,14 +987,14 @@ async function main() {
     ),
   );
 
-  // Courses (+ modules, lessons, reviews)
+  // Courses (+ modules, lessons, quizzes, reviews)
   const createdCourses: { id: string; slug: string }[] = [];
   for (let ci = 0; ci < COURSES.length; ci++) {
     const c = COURSES[ci];
+    const nextVideo = makeVideoPicker(c.categorySlug);
     const durationMinutes = Math.round(
       c.modules.reduce(
-        (sum, m) =>
-          sum + m.lessons.reduce((s, l) => s + l.durationSeconds, 0),
+        (sum, m) => sum + m.lessons.reduce((s, l) => s + l.durationSeconds, 0),
         0,
       ) / 60,
     );
@@ -392,8 +1007,6 @@ async function main() {
         categoryId: categoryBySlug.get(c.categorySlug)!,
         level: c.level,
         durationMinutes,
-        priceCents: c.priceCents,
-        currency: 'KZT',
         instructorId: instructors[c.instructor].id,
         coverImageUrl: cover(c.slug),
         status: 'PUBLISHED',
@@ -409,6 +1022,26 @@ async function main() {
                 durationSeconds: l.durationSeconds,
                 isFreePreview: mi === 0 && li === 0,
               })),
+            },
+            quiz: {
+              create: {
+                title: m.quiz.title ?? `${m.title} — тест`,
+                passingScore: m.quiz.passingScore ?? 60,
+                questions: {
+                  create: m.quiz.questions.map((q, qi) => ({
+                    text: q.text,
+                    order: qi + 1,
+                    explanation: q.explanation,
+                    options: {
+                      create: q.options.map((o, oi) => ({
+                        text: o.text,
+                        isCorrect: !!o.correct,
+                        order: oi + 1,
+                      })),
+                    },
+                  })),
+                },
+              },
             },
           })),
         },
@@ -437,45 +1070,53 @@ async function main() {
     });
   }
 
-  // Pre-enroll the demo student in course #3 (Circular Economies) with partial
-  // progress: complete the whole first module.
+  // Pre-enroll the demo student in course #3 (Circular Economies): complete the
+  // first module's lessons but NOT its quiz — so the learning + quiz loop is
+  // demonstrable. Progress = (done lessons + passed quizzes) / (lessons + quizzes).
   const enrolledCourseId = createdCourses[2].id;
   const enrollment = await prisma.enrollment.create({
-    data: {
-      userId: student.id,
-      courseId: enrolledCourseId,
-      status: 'ACTIVE',
-    },
+    data: { userId: student.id, courseId: enrolledCourseId, status: 'ACTIVE' },
   });
 
-  const lessons = await prisma.lesson.findMany({
-    where: { module: { courseId: enrolledCourseId } },
-    orderBy: [{ module: { order: 'asc' } }, { order: 'asc' }],
+  const firstModule = await prisma.module.findFirst({
+    where: { courseId: enrolledCourseId },
+    orderBy: { order: 'asc' },
+    include: { lessons: { orderBy: { order: 'asc' } } },
   });
-  const completedCount = Math.min(3, lessons.length); // first module
-  for (let i = 0; i < lessons.length; i++) {
-    const done = i < completedCount;
+  for (const lesson of firstModule?.lessons ?? []) {
     await prisma.lessonProgress.create({
       data: {
         enrollmentId: enrollment.id,
-        lessonId: lessons[i].id,
-        completed: done,
-        watchedSeconds: done ? lessons[i].durationSeconds : 0,
-        completedAt: done ? new Date() : null,
+        lessonId: lesson.id,
+        completed: true,
+        watchedSeconds: lesson.durationSeconds,
+        completedAt: new Date(),
       },
     });
   }
-  const progressPercent = Math.round((completedCount / lessons.length) * 100);
+
+  const [totalLessons, totalQuizzes, doneLessons] = await Promise.all([
+    prisma.lesson.count({ where: { module: { courseId: enrolledCourseId } } }),
+    prisma.quiz.count({ where: { module: { courseId: enrolledCourseId } } }),
+    prisma.lessonProgress.count({
+      where: { enrollmentId: enrollment.id, completed: true },
+    }),
+  ]);
+  const units = totalLessons + totalQuizzes;
+  const progressPercent =
+    units === 0 ? 0 : Math.round((doneLessons / units) * 100);
   await prisma.enrollment.update({
     where: { id: enrollment.id },
     data: { progressPercent },
   });
 
+  const totalQuizCount = await prisma.quiz.count();
   // eslint-disable-next-line no-console
   console.log(
     `Seed complete: ${CATEGORIES.length} categories, ${COURSES.length} courses, ` +
-      `${instructors.length} instructors, demo student enrolled in ` +
-      `"${COURSES[2].title}" at ${progressPercent}%.`,
+      `${totalQuizCount} module quizzes, ${instructors.length} instructors. ` +
+      `Demo student enrolled in "${COURSES[2].title}" at ${progressPercent}% ` +
+      `(module 1 lessons done, quiz pending).`,
   );
 }
 

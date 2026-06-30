@@ -5,7 +5,6 @@ import { AuthModule } from './auth/auth.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { HealthModule } from './health/health.module';
 import { LearningModule } from './learning/learning.module';
-import { PaymentsModule } from './payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -15,7 +14,6 @@ import { PrismaModule } from './prisma/prisma.module';
     HealthModule,
     AuthModule,
     CatalogModule,
-    PaymentsModule,
     LearningModule,
     AdminModule,
   ],

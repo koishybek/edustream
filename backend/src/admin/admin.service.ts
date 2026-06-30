@@ -9,21 +9,14 @@ export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
   async stats() {
-    const [users, courses, enrollments, paid] = await this.prisma.$transaction([
-      this.prisma.user.count(),
-      this.prisma.course.count(),
-      this.prisma.enrollment.count(),
-      this.prisma.order.aggregate({
-        where: { status: 'PAID' },
-        _sum: { amountCents: true },
-      }),
-    ]);
-    return {
-      users,
-      courses,
-      enrollments,
-      revenueCents: paid._sum.amountCents ?? 0,
-    };
+    const [users, courses, publishedCourses, enrollments] =
+      await this.prisma.$transaction([
+        this.prisma.user.count(),
+        this.prisma.course.count(),
+        this.prisma.course.count({ where: { status: 'PUBLISHED' } }),
+        this.prisma.enrollment.count(),
+      ]);
+    return { users, courses, publishedCourses, enrollments };
   }
 
   async listUsers(q: PaginationDto) {
@@ -63,8 +56,6 @@ export class AdminService {
       slug: c.slug,
       status: c.status,
       level: c.level,
-      priceCents: c.priceCents,
-      currency: c.currency,
       ratingAvg: c.ratingAvg,
       ratingCount: c.ratingCount,
       category: { id: c.category.id, name: c.category.name },
@@ -99,8 +90,6 @@ export class AdminService {
         instructorId: dto.instructorId,
         level: dto.level,
         durationMinutes: dto.durationMinutes,
-        priceCents: dto.priceCents,
-        currency: dto.currency ?? 'KZT',
         coverImageUrl: dto.coverImageUrl,
         status: dto.status ?? 'DRAFT',
         modules: dto.modules
@@ -134,7 +123,6 @@ export class AdminService {
         categoryId: dto.categoryId,
         level: dto.level,
         durationMinutes: dto.durationMinutes,
-        priceCents: dto.priceCents,
         coverImageUrl: dto.coverImageUrl,
         status: dto.status,
       },

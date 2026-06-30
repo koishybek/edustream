@@ -34,12 +34,6 @@ export class UpdateCourseDto {
   durationMinutes?: number;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  priceCents?: number;
-
-  @IsOptional()
   @IsString()
   coverImageUrl?: string;
 

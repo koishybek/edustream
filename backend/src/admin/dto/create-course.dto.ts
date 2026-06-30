@@ -68,15 +68,6 @@ export class CreateCourseDto {
   @Min(0)
   durationMinutes!: number;
 
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  priceCents!: number;
-
-  @IsOptional()
-  @IsString()
-  currency?: string;
-
   @IsOptional()
   @IsString()
   coverImageUrl?: string;

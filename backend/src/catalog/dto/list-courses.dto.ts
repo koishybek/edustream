@@ -34,18 +34,6 @@ export class ListCoursesDto {
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  minPrice?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  maxPrice?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
   minDuration?: number;
 
   @IsOptional()

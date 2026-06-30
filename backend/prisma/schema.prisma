@@ -41,16 +41,6 @@ enum EnrollmentStatus {
   COMPLETED
 }
 
-enum OrderStatus {
-  PENDING
-  PAID
-  FAILED
-}
-
-enum PaymentProvider {
-  STRIPE
-}
-
 // ---------- Models ----------
 
 model User {
@@ -69,7 +59,6 @@ model User {
   coursesTaught Course[]     @relation("InstructorCourses")
   enrollments   Enrollment[]
   reviews       Review[]
-  orders        Order[]
 
   @@index([role])
 }
@@ -91,8 +80,6 @@ model Course {
   category       Category     @relation(fields: [categoryId], references: [id])
   level          Level
   durationMinutes Int
-  priceCents     Int
-  currency       String       @default("KZT")
   instructorId   String
   instructor     User         @relation("InstructorCourses", fields: [instructorId], references: [id])
   ratingAvg      Float        @default(0)
@@ -104,7 +91,6 @@ model Course {
   modules     Module[]
   enrollments Enrollment[]
   reviews     Review[]
-  orders      Order[]
 
   @@index([categoryId])
   @@index([instructorId])
@@ -120,6 +106,7 @@ model Module {
   title    String
   order    Int
   lessons  Lesson[]
+  quiz     Quiz?
 
   @@index([courseId])
 }
@@ -150,6 +137,7 @@ model Enrollment {
   createdAt       DateTime         @default(now())
 
   lessonProgress LessonProgress[]
+  quizAttempts   QuizAttempt[]
 
   @@unique([userId, courseId])
   @@index([userId])
@@ -186,20 +174,53 @@ model Review {
   @@index([userId])
 }
 
-model Order {
-  id                String          @id @default(cuid())
-  userId            String
-  user              User            @relation(fields: [userId], references: [id])
-  courseId          String
-  course            Course          @relation(fields: [courseId], references: [id])
-  amountCents       Int
-  currency          String          @default("KZT")
-  provider          PaymentProvider @default(STRIPE)
-  providerSessionId String?
-  status            OrderStatus     @default(PENDING)
-  createdAt         DateTime        @default(now())
+// ---------- Quizzes ----------
 
-  @@index([userId])
-  @@index([courseId])
-  @@index([providerSessionId])
+/// One quiz per module (taken after its lessons). Gates module completion.
+model Quiz {
+  id           String        @id @default(cuid())
+  moduleId     String        @unique
+  module       Module        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title        String
+  passingScore Int           @default(60) // percent needed to pass
+  questions    Question[]
+  attempts     QuizAttempt[]
+}
+
+model Question {
+  id          String           @id @default(cuid())
+  quizId      String
+  quiz        Quiz             @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  text        String
+  order       Int
+  explanation String?
+  options     QuestionOption[]
+
+  @@index([quizId])
+}
+
+model QuestionOption {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text       String
+  isCorrect  Boolean  @default(false)
+  order      Int
+
+  @@index([questionId])
+}
+
+/// A student's graded attempt at a module quiz. Multiple attempts allowed.
+model QuizAttempt {
+  id           String     @id @default(cuid())
+  enrollmentId String
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  quizId       String
+  quiz         Quiz       @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  score        Int // percent
+  passed       Boolean
+  createdAt    DateTime   @default(now())
+
+  @@index([enrollmentId])
+  @@index([quizId])
 }
