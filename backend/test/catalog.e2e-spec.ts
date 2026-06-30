@@ -72,8 +72,6 @@ describe('Catalog (e2e)', () => {
         id: expect.any(String),
         title: expect.any(String),
         slug: expect.any(String),
-        priceCents: expect.any(Number),
-        currency: expect.any(String),
         ratingAvg: expect.any(Number),
         ratingCount: expect.any(Number),
         category: expect.objectContaining({
@@ -88,6 +86,8 @@ describe('Catalog (e2e)', () => {
       }),
     );
     expect(card.videoUrl).toBeUndefined();
+    expect(card.priceCents).toBeUndefined();
+    expect(card.currency).toBeUndefined();
   });
 
   it('caps pageSize at 50', async () => {
@@ -163,6 +163,13 @@ describe('Catalog (e2e)', () => {
         title: expect.any(String),
         order: expect.any(Number),
         lessons: expect.any(Array),
+      }),
+    );
+    // Every seeded module carries a quiz surfaced as { id, questionCount }.
+    expect(module.quiz).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        questionCount: expect.any(Number),
       }),
     );
     const lesson = module.lessons[0];
