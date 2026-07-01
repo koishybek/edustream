@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { CourseFormModal } from "./CourseFormModal";
 import {
-  formatTenge,
   type AdminCourseRow,
   type Category,
   type Paginated,
@@ -130,7 +129,6 @@ export default function CoursesPage() {
             <tr className="border-b border-border text-left text-xs font-bold uppercase tracking-wide text-text-tertiary">
               <th className="px-5 py-3">Title</th>
               <th className="px-5 py-3">Category</th>
-              <th className="px-5 py-3 text-right">Price</th>
               <th className="px-5 py-3">Status</th>
               <th className="px-5 py-3 text-right">Rating</th>
               <th className="px-5 py-3 text-right">Lessons</th>
@@ -141,7 +139,7 @@ export default function CoursesPage() {
             {loading ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-5 py-10 text-center text-text-tertiary"
                 >
                   Loading…
@@ -150,7 +148,7 @@ export default function CoursesPage() {
             ) : rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-5 py-10 text-center text-text-tertiary"
                 >
                   No courses yet. Create your first one.
@@ -170,9 +168,6 @@ export default function CoursesPage() {
                   </td>
                   <td className="px-5 py-3 text-text-secondary">
                     {row.category?.name ?? "—"}
-                  </td>
-                  <td className="px-5 py-3 text-right tabular-nums text-text-primary">
-                    {formatTenge(row.priceCents)}
                   </td>
                   <td className="px-5 py-3">
                     <StatusBadge status={row.status} />

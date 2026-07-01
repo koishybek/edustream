@@ -19,8 +19,8 @@ interface Instructor {
   role: string;
 }
 
-const SAMPLE_VIDEO =
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+// Fallback video for lessons created without an explicit URL (real, on-topic).
+const SAMPLE_VIDEO = "https://www.youtube.com/watch?v=Kl3VVrggKz4";
 
 const inputCls =
   "mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-brand";
@@ -51,7 +51,6 @@ export function CourseFormModal({
   const [instructorId, setInstructorId] = useState("");
   const [level, setLevel] = useState<Level>("BEGINNER");
   const [durationMinutes, setDurationMinutes] = useState(60);
-  const [priceTenge, setPriceTenge] = useState(0);
   const [status, setStatus] = useState<CourseStatus>("DRAFT");
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [modules, setModules] = useState<ModuleDraft[]>([]);
@@ -74,7 +73,6 @@ export function CourseFormModal({
         setCategoryId(c.categoryId);
         setLevel(c.level);
         setDurationMinutes(c.durationMinutes);
-        setPriceTenge(Math.round(c.priceCents / 100));
         setStatus(c.status);
         setCoverImageUrl(c.coverImageUrl ?? "");
         setModules(
@@ -119,7 +117,6 @@ export function CourseFormModal({
     }
     setSaving(true);
     try {
-      const priceCents = Math.round(Number(priceTenge) * 100);
       if (isEdit) {
         await api(`/admin/courses/${courseId}`, {
           method: "PATCH",
@@ -129,7 +126,6 @@ export function CourseFormModal({
             categoryId,
             level,
             durationMinutes: Number(durationMinutes),
-            priceCents,
             coverImageUrl: coverImageUrl || undefined,
             status,
           },
@@ -145,7 +141,6 @@ export function CourseFormModal({
             instructorId,
             level,
             durationMinutes: Number(durationMinutes),
-            priceCents,
             coverImageUrl: coverImageUrl || undefined,
             status,
             modules: modules
@@ -286,8 +281,8 @@ export function CourseFormModal({
                 </label>
 
                 <label className="block">
-                  <span className={labelCls}>Price (₸)</span>
-                  <input type="number" className={inputCls} value={priceTenge} onChange={(e) => setPriceTenge(Number(e.target.value))} />
+                  <span className={labelCls}>Cover image URL</span>
+                  <input className={inputCls} value={coverImageUrl} onChange={(e) => setCoverImageUrl(e.target.value)} placeholder="Optional" />
                 </label>
               </div>
 

@@ -1,8 +1,8 @@
 /**
  * Shared types + helpers for the admin Courses surface.
  *
- * These mirror the NestJS API contract (`/admin/courses`, `/categories`). Money
- * is always integer cents in KZT; never carry floating tenge across the wire.
+ * These mirror the NestJS API contract (`/admin/courses`, `/categories`).
+ * Courses are free — there is no price/currency on the wire.
  */
 
 export type CourseStatus = "DRAFT" | "PUBLISHED";
@@ -36,8 +36,6 @@ export interface AdminCourseRow {
   title: string;
   slug: string;
   status: CourseStatus;
-  priceCents: number;
-  currency: string;
   ratingAvg: number;
   ratingCount: number;
   category?: { id: string; name: string; slug: string; icon: string } | null;
@@ -74,7 +72,6 @@ export interface AdminCourseDetail {
   categoryId: string;
   level: Level;
   durationMinutes: number;
-  priceCents: number;
   coverImageUrl: string | null;
   status: CourseStatus;
   modules?: Array<{
@@ -100,7 +97,6 @@ export interface CourseWriteBody {
   categoryId: string;
   level: Level;
   durationMinutes: number;
-  priceCents: number;
   coverImageUrl?: string | null;
   status: CourseStatus;
   modules: Array<{
@@ -114,12 +110,6 @@ export interface CourseWriteBody {
       isFreePreview: boolean;
     }>;
   }>;
-}
-
-/** KZT amounts are integer cents; render whole tenge with the ₸ symbol. */
-export function formatTenge(cents: number): string {
-  const tenge = Math.round(cents / 100);
-  return `${tenge.toLocaleString("en-US")} ₸`;
 }
 
 /** Lowercase, hyphenated slug from a title (best-effort, editable by hand). */

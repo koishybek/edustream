@@ -6,21 +6,15 @@ import { api, ApiError } from "@/lib/api";
 interface AdminStats {
   users: number;
   courses: number;
+  publishedCourses: number;
   enrollments: number;
-  revenueCents: number;
 }
 
-/** KZT amounts are integer cents; render whole tenge with the ₸ symbol. */
-function formatTenge(cents: number): string {
-  const tenge = Math.round(cents / 100);
-  return `${tenge.toLocaleString("en-US")} ₸`;
-}
-
-const CARDS: { key: keyof AdminStats; label: string; money?: boolean }[] = [
+const CARDS: { key: keyof AdminStats; label: string }[] = [
   { key: "users", label: "Users" },
   { key: "courses", label: "Courses" },
+  { key: "publishedCourses", label: "Published" },
   { key: "enrollments", label: "Enrollments" },
-  { key: "revenueCents", label: "Revenue", money: true },
 ];
 
 export default function DashboardPage() {
@@ -78,8 +72,6 @@ export default function DashboardPage() {
             <div className="mt-3 font-display text-3xl font-bold text-text-primary">
               {stats === null ? (
                 <span className="inline-block h-8 w-20 animate-pulse rounded bg-surface-alt" />
-              ) : card.money ? (
-                formatTenge(stats[card.key])
               ) : (
                 stats[card.key].toLocaleString("en-US")
               )}
