@@ -2,30 +2,28 @@
 
 EdTech + consulting platform for **ESG / sustainability education** (Kazakhstan & Central Asia, expanding internationally). Mobile-first, multilingual (RU / EN / KZ).
 
-This is a **real, runnable MVP slice** of the core learning loop:
+A **real, runnable** slice of the core learning loop — courses are **free**:
 
-> Register/login → onboarding → browse catalog → open course → buy → watch lessons → track progress → review. Plus a minimal web admin.
+> Register/login → onboarding → browse catalog → open course → **enroll (free)** → watch real (YouTube) lessons → **pass each module's quiz** → track progress → review. Plus a minimal web admin.
 
 ## Monorepo layout
 
 | Package | Stack | What it is |
 |---|---|---|
 | [`backend/`](backend/) | NestJS + Prisma + PostgreSQL | The API. Versioned under `/api/v1`. Single source of truth for mobile **and** admin. |
-| [`mobile/`](mobile/) | React + Vite + Tailwind **PWA** (TanStack Query, React Router, axios) | The student app — installable PWA. Feature-first, i18n (ru/en/kz). |
+| [`mobile/`](mobile/) | React + Vite **PWA** (TanStack Query, React Router, axios) | The student app — installable PWA. Feature-first, i18n (ru/en/kz). |
 | [`admin/`](admin/) | Next.js (App Router) + TypeScript + Tailwind | Minimal web admin for course CRUD + stats. Hits the same `/api/v1`. |
 | [`infra/`](infra/) | docker-compose + scripts | Local PostgreSQL (Docker) **or** a no-Docker local cluster helper. |
-
-Plain folders — no JS monorepo tool (Flutter doesn't fit one). Each package has its own README and install steps.
 
 ## Prerequisites
 
 - **Node.js ≥ 20** (tested on 22.x) — backend + admin.
 - **PostgreSQL 16/17** — via Docker (`infra/docker-compose.yml`) **or** a local install (`infra/` helper scripts).
-- _(mobile is a PWA — no Flutter/native SDK needed; Node covers it.)_
+- _(mobile is a PWA — no native SDK needed; Node covers it.)_
 
 ## Quick start (this machine — no Docker)
 
-A self-contained local PostgreSQL 17 cluster is already provisioned on **port 5433** (no password, trust auth) using the bundled `pg_ctl`. See [`infra/README.md`](infra/README.md) to start/stop it.
+A self-contained local PostgreSQL 17 cluster is provisioned on **port 5433** (no password, trust auth). See [`infra/README.md`](infra/README.md) to start/stop it.
 
 ```bash
 # 1. Database (if not already running) — see infra/README.md
@@ -36,7 +34,7 @@ cd backend
 npm install
 npm run prisma:generate
 npm run prisma:migrate       # apply migrations to the dev DB
-npm run db:seed              # demo data (idempotent)
+npm run db:seed              # demo data (idempotent): real videos + quizzes
 npm run start:dev            # → http://localhost:4000/api/v1
 curl http://localhost:4000/api/v1/health
 
@@ -59,7 +57,7 @@ npm run dev                  # → http://localhost:5173
 | Admin | `admin@demo.io` | `Admin123!` |
 | Instructor | `elena@demo.io` | `Instructor123!` |
 
-The demo student is pre-enrolled in *The Architecture of Circular Economies* at 50% progress.
+The demo student is pre-enrolled in *The Architecture of Circular Economies* with module 1's lessons complete and its quiz still pending — so the video → quiz → progress loop is ready to demo.
 
 ## With Docker (any machine)
 
@@ -71,17 +69,31 @@ docker compose up -d         # PostgreSQL on localhost:5432
 
 ## Build status
 
-Built **phase by phase**; each phase runs end-to-end before the next starts.
+Built **phase by phase**; each phase runs end-to-end before the next.
 
 - ✅ **Phase 0 — Scaffold:** monorepo, infra, NestJS `/api/v1/health` (Prisma-connected), mobile PWA themed skeleton, admin login shell.
 - ✅ **Phase 1 — Auth + onboarding:** full data model + migration + seed; JWT auth (register/login/refresh/me), roles; PWA login/register/onboarding/profile with token refresh, auth-gated routing, RU/EN/KZ locale switcher.
 - ✅ **Phase 2 — Catalog:** `GET /courses` search/filter/sort/pagination, course detail (curriculum + reviews), filters sheet, real Home.
-- ✅ **Phase 3 — Purchase + learning:** checkout (mock provider → enrollment; Stripe stub behind it), My Learning, video player, progress recompute.
+- ✅ **Phase 3 — Learning (free):** free idempotent enrollment, My Learning, **YouTube video player**, **module-end quizzes that gate progress**, progress recompute over lessons + quizzes.
 - ✅ **Phase 4 — Admin:** dashboard stats, course CRUD (modules/lessons editor), users table — role-guarded.
+
+## Learning model
+
+- **Free courses.** Enrollment is one tap; there is no payment layer.
+- **Real video.** Lessons play real YouTube content (TED / TED-Ed / Ellen MacArthur Foundation) via a privacy-friendly embed; direct-file URLs still fall back to a native player.
+- **Module quizzes.** Each module ends in a multiple-choice quiz. A module is complete only when its lessons are watched **and** its quiz is passed (default pass mark 60%). Course completion requires every quiz passed.
+- **Progress** = (completed lessons + passed quizzes) ÷ (all lessons + all quizzes).
 
 ## Conventions
 
-- Money as **integer cents**; default currency `KZT`.
 - API errors use a consistent envelope: `{ "error": { "code", "message", "details?" } }`.
 - Lists are paginated: `{ "data", "page", "pageSize", "total" }`.
 - Secrets via `.env` only (never committed); every package ships an `.env.example`.
+
+## Tests
+
+```bash
+cd backend && npm run test:e2e   # auth + catalog + learning/quiz e2e (27 tests)
+cd mobile  && npx tsc --noEmit   # student app typecheck
+cd admin   && npx tsc --noEmit   # admin typecheck
+```
