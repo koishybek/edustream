@@ -292,4 +292,42 @@ describe('Catalog (e2e)', () => {
       });
     }
   });
+
+  it('GET reviews include the reviewer user id (for "my review" matching)', async () => {
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: 'student@demo.io', password: 'Student123!' })
+      .expect(200);
+    const token = login.body.accessToken as string;
+
+    const enrollment = await prisma.enrollment.findFirstOrThrow({
+      where: { user: { email: 'student@demo.io' } },
+      select: { courseId: true },
+    });
+    const courseId = enrollment.courseId;
+
+    try {
+      await request(app.getHttpServer())
+        .post(`/api/v1/courses/${courseId}/reviews`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ rating: 5, comment: 'phase5 user-id review' })
+        .expect(201);
+
+      const res = await request(app.getHttpServer())
+        .get(`/api/v1/courses/${courseId}/reviews`)
+        .expect(200);
+
+      expect(res.body.data.length).toBeGreaterThan(0);
+      expect(res.body.data[0].user).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          name: expect.any(String),
+        }),
+      );
+    } finally {
+      await prisma.review.deleteMany({
+        where: { courseId, user: { email: 'student@demo.io' } },
+      });
+    }
+  });
 });

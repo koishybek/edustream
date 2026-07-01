@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   BarChart3,
@@ -10,11 +10,17 @@ import {
   Lock,
   PlayCircle,
   Share2,
+  Star,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useCourse, useCourseReviews } from "../../core/catalog/catalog.api";
+import {
+  useCourse,
+  useCourseReviews,
+  useCreateReview,
+} from "../../core/catalog/catalog.api";
 import { durationHours } from "../../core/catalog/format";
 import type { CourseModule } from "../../core/catalog/types";
+import { useAuth } from "../../core/auth/auth.store";
 import { useEnroll, useEnrollments } from "../../core/learning/learning.api";
 import { useI18n } from "../../core/i18n/I18nProvider";
 import { Avatar } from "../../ui/Avatar";
@@ -98,6 +104,21 @@ export default function CourseScreen() {
 
   const [success, setSuccess] = useState(false);
 
+  // --- "Your review" state (enrolled users only) ---
+  const myUserId = useAuth((s) => s.user?.id);
+  const createReview = useCreateReview(course?.id ?? "", slug);
+  const myReview =
+    (reviews?.data ?? []).find((r) => r.user.id === myUserId) ?? null;
+  const [editingReview, setEditingReview] = useState(false);
+  const [myRating, setMyRating] = useState(5);
+  const [myComment, setMyComment] = useState("");
+  useEffect(() => {
+    if (myReview) {
+      setMyRating(myReview.rating);
+      setMyComment(myReview.comment ?? "");
+    }
+  }, [myReview?.id]);
+
   if (isLoading || !course) {
     return (
       <div className="screen">
@@ -125,6 +146,20 @@ export default function CourseScreen() {
     try {
       await enroll.mutateAsync(course.id);
       setSuccess(true);
+    } catch {
+      snack(t("errorGeneric"), "error");
+    }
+  }
+
+  async function submitReview() {
+    if (!course) return;
+    try {
+      await createReview.mutateAsync({
+        rating: myRating,
+        comment: myComment.trim() || undefined,
+      });
+      setEditingReview(false);
+      snack(t("review.saved"));
     } catch {
       snack(t("errorGeneric"), "error");
     }
@@ -268,6 +303,85 @@ export default function CourseScreen() {
               count={t("course.avgRating")}
             />
           </div>
+
+          {enrolled && (
+            <div className="review your-review" style={{ marginBottom: 12 }}>
+              <div className="t-bodysb" style={{ marginBottom: 8 }}>
+                {t("review.yours")}
+              </div>
+              {myReview && !editingReview ? (
+                <>
+                  <RatingStars value={myReview.rating} />
+                  {myReview.comment && (
+                    <div className="t-body muted" style={{ marginTop: 6 }}>
+                      {myReview.comment}
+                    </div>
+                  )}
+                  <Button variant="text" onClick={() => setEditingReview(true)}>
+                    {t("review.edit")}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div
+                    role="radiogroup"
+                    aria-label={t("review.yours")}
+                    style={{ display: "flex", gap: 4, marginBottom: 8 }}
+                  >
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        role="radio"
+                        aria-checked={n === myRating}
+                        aria-label={String(n)}
+                        onClick={() => setMyRating(n)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: 2,
+                          cursor: "pointer",
+                          lineHeight: 0,
+                        }}
+                      >
+                        <Star
+                          className="icon"
+                          style={{
+                            fill: n <= myRating ? "var(--accent)" : "none",
+                            color: "var(--accent)",
+                          }}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={myComment}
+                    onChange={(e) => setMyComment(e.target.value)}
+                    placeholder={t("review.commentPlaceholder")}
+                    rows={3}
+                    style={{
+                      width: "100%",
+                      resize: "vertical",
+                      padding: 10,
+                      borderRadius: 12,
+                      border: "1px solid var(--line, rgba(0,0,0,.12))",
+                      font: "inherit",
+                    }}
+                  />
+                  <Button
+                    variant="primary"
+                    block
+                    loading={createReview.isPending}
+                    onClick={submitReview}
+                    style={{ marginTop: 8 }}
+                  >
+                    {myReview ? t("review.update") : t("review.leave")}
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
           {(reviews?.data ?? []).slice(0, 5).map((r) => (
             <div className="review" key={r.id}>
               <div className="review__top">

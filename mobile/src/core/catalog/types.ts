@@ -53,7 +53,13 @@ export interface Review {
   rating: number;
   comment: string | null;
   createdAt: string;
-  user: { name: string };
+  user: { id: string; name: string };
+}
+
+/** Body for POST /courses/:id/reviews. */
+export interface CreateReviewInput {
+  rating: number; // 1..5
+  comment?: string;
 }
 
 /** Standard paginated envelope every list endpoint returns. */

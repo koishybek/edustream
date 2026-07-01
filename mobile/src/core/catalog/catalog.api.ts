@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type {
   Category,
   CourseCard,
   CourseDetail,
   CourseFilters,
+  CreateReviewInput,
   Paginated,
   Review,
 } from "./types";
@@ -71,6 +72,25 @@ export function useCourseReviews(
         { params: { page, pageSize } },
       );
       return data;
+    },
+  });
+}
+
+/** Enrolled-only upsert of the current user's review; refreshes rating + list. */
+export function useCreateReview(courseId: string, slug: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateReviewInput) => {
+      const { data } = await api.post<Review>(
+        `/courses/${courseId}/reviews`,
+        input,
+      );
+      return data;
+    },
+    onSuccess: () => {
+      // course detail carries ratingAvg/ratingCount; reviews list is prefix-matched.
+      qc.invalidateQueries({ queryKey: ["course", slug] });
+      qc.invalidateQueries({ queryKey: ["course-reviews", courseId] });
     },
   });
 }

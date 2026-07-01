@@ -193,7 +193,7 @@ export class CatalogService {
           rating: true,
           comment: true,
           createdAt: true,
-          user: { select: { name: true } },
+          user: { select: { id: true, name: true } },
         },
       }),
       this.prisma.review.count({ where }),

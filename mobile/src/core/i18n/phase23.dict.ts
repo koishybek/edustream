@@ -55,6 +55,19 @@ export const extraDict: Record<AppLocale, Record<string, string>> = {
     "quiz.continue": "Продолжить",
     "quiz.empty": "В этом тесте пока нет вопросов.",
     "quiz.back": "Назад к курсу",
+
+    "review.yours": "Ваш отзыв",
+    "review.leave": "Оставить отзыв",
+    "review.update": "Обновить отзыв",
+    "review.edit": "Изменить",
+    "review.commentPlaceholder": "Поделитесь впечатлением…",
+    "review.saved": "Спасибо! Ваш отзыв сохранён.",
+
+    "completion.title": "Курс пройден!",
+    "completion.congrats": "Поздравляем, вы завершили курс",
+    "completion.completedOn": "Завершено",
+    "completion.back": "Вернуться к обучению",
+    "learning.completedBadge": "Курс пройден",
   },
   en: {
     "course.freePreview": "Free preview",
@@ -105,6 +118,19 @@ export const extraDict: Record<AppLocale, Record<string, string>> = {
     "quiz.continue": "Continue",
     "quiz.empty": "This quiz has no questions yet.",
     "quiz.back": "Back to course",
+
+    "review.yours": "Your review",
+    "review.leave": "Leave a review",
+    "review.update": "Update review",
+    "review.edit": "Edit",
+    "review.commentPlaceholder": "Share your impression…",
+    "review.saved": "Thanks! Your review was saved.",
+
+    "completion.title": "Course completed!",
+    "completion.congrats": "Congratulations on finishing the course",
+    "completion.completedOn": "Completed",
+    "completion.back": "Back to learning",
+    "learning.completedBadge": "Completed",
   },
   kz: {
     "course.freePreview": "Тегін превью",
@@ -155,5 +181,18 @@ export const extraDict: Record<AppLocale, Record<string, string>> = {
     "quiz.continue": "Жалғастыру",
     "quiz.empty": "Бұл тесте әзірге сұрақ жоқ.",
     "quiz.back": "Курсқа оралу",
+
+    "review.yours": "Сіздің пікіріңіз",
+    "review.leave": "Пікір қалдыру",
+    "review.update": "Пікірді жаңарту",
+    "review.edit": "Өзгерту",
+    "review.commentPlaceholder": "Әсеріңізбен бөлісіңіз…",
+    "review.saved": "Рақмет! Пікір сақталды.",
+
+    "completion.title": "Курс аяқталды!",
+    "completion.congrats": "Курсты аяқтағаныңызбен құттықтаймыз",
+    "completion.completedOn": "Аяқталды",
+    "completion.back": "Оқуға оралу",
+    "learning.completedBadge": "Аяқталды",
   },
 };
