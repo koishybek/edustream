@@ -168,3 +168,41 @@
   border: 2px solid color-mix(in srgb, currentColor 32%, transparent);
   border-top-color: currentColor; animation: spin .7s linear infinite; flex: none;
 }
+
+/* ---------- Quiz ---------- */
+.quiz-q {
+  background: var(--surface); border-radius: var(--r-card);
+  box-shadow: var(--sh-1); padding: 16px; margin-bottom: 12px;
+}
+.quiz-q__text { font-size: 15px; font-weight: 600; line-height: 1.4; margin-bottom: 12px; }
+.quiz-q__opts { display: flex; flex-direction: column; gap: 8px; }
+.quiz-opt {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 14px; border-radius: var(--r-btn); font-size: 14px; font-weight: 550;
+  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border);
+}
+.quiz-opt.selectable {
+  width: 100%; cursor: pointer; font-family: var(--font); text-align: left;
+  background: var(--surface); transition: box-shadow .15s, background .15s;
+}
+.quiz-opt.selectable:hover { background: var(--accent-tint); }
+.quiz-opt.selectable.on { background: var(--accent-tint); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.quiz-opt.correct { background: rgba(46,125,91,.12); box-shadow: inset 0 0 0 1.5px var(--success); color: var(--success); }
+.quiz-opt.wrong   { background: rgba(179,38,30,.10); box-shadow: inset 0 0 0 1.5px var(--error);   color: var(--error); }
+.quiz-opt .icon-sm { flex: none; }
+.quiz-q__explain {
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
+  font-size: 13px; line-height: 1.5; color: var(--text-2);
+}
+
+.quiz-result {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center; background: var(--surface); border-radius: var(--r-card);
+  box-shadow: var(--sh-1); padding: 24px 18px;
+}
+.quiz-result__badge {
+  width: 60px; height: 60px; border-radius: 999px; display: flex;
+  align-items: center; justify-content: center; color: #fff; margin-bottom: 4px;
+}
+.quiz-result.pass .quiz-result__badge { background: var(--success); }
+.quiz-result.fail .quiz-result__badge { background: var(--error); }

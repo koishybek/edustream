@@ -67,7 +67,7 @@ export default function HomeScreen() {
   // Top picks: the highest-rated courses, shown only on the unfiltered home.
   const { data: recommended } = useCourses({ sort: "rating", pageSize: 8 });
   const showRecommended =
-    !search.trim() && !sheet.categoryId && !sheet.level && !sheet.minPrice;
+    !search.trim() && !sheet.categoryId && !sheet.level && !sheet.minDuration;
 
   const hour = new Date().getHours();
   const greetKey =

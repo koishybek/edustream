@@ -10,6 +10,7 @@ import LearningScreen from "../features/learning/LearningScreen";
 import OnboardingScreen from "../features/onboarding/OnboardingScreen";
 import PlayerScreen from "../features/player/PlayerScreen";
 import ProfileScreen from "../features/profile/ProfileScreen";
+import QuizScreen from "../features/quiz/QuizScreen";
 import SplashScreen from "../features/splash/SplashScreen";
 import WelcomeScreen, { INTRO_SEEN_KEY } from "../features/welcome/WelcomeScreen";
 
@@ -143,6 +144,14 @@ export const router = createBrowserRouter([
         element: (
           <Protected requireOnboarded>
             <PlayerScreen />
+          </Protected>
+        ),
+      },
+      {
+        path: "/learn/:courseId/quiz/:quizId",
+        element: (
+          <Protected requireOnboarded>
+            <QuizScreen />
           </Protected>
         ),
       },

@@ -2,7 +2,7 @@ import { Clock, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "../../core/i18n/I18nProvider";
 import type { CourseCard } from "../../core/catalog/types";
-import { durationHours, formatKzt } from "../../core/catalog/format";
+import { durationHours } from "../../core/catalog/format";
 import { categoryVisual, Cover } from "../../ui/Cover";
 import { RatingStars } from "../../ui/RatingStars";
 
@@ -53,9 +53,7 @@ export function CourseCardView({
               maximumFractionDigits: 1,
             })}
           />
-          <span className="course-card__price">
-            {formatKzt(course.priceCents)}
-          </span>
+          <span className="course-card__price">{t("course.free")}</span>
         </div>
       </div>
     </button>

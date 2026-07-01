@@ -6,23 +6,22 @@ import {
   Check,
   ChevronDown,
   Clock,
-  CreditCard,
+  HelpCircle,
   Lock,
   PlayCircle,
   Share2,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useCourse, useCourseReviews } from "../../core/catalog/catalog.api";
-import { durationHours, formatKzt } from "../../core/catalog/format";
+import { durationHours } from "../../core/catalog/format";
 import type { CourseModule } from "../../core/catalog/types";
-import { useCheckout, useEnrollments } from "../../core/learning/learning.api";
+import { useEnroll, useEnrollments } from "../../core/learning/learning.api";
 import { useI18n } from "../../core/i18n/I18nProvider";
 import { Avatar } from "../../ui/Avatar";
 import { Badge } from "../../ui/Badge";
 import { Button } from "../../ui/Button";
 import { categoryVisual } from "../../ui/Cover";
 import { RatingStars } from "../../ui/RatingStars";
-import { Sheet } from "../../ui/Sheet";
 import { Spinner } from "../../ui/Spinner";
 import { useSnackbar } from "../../ui/Snackbar";
 
@@ -73,6 +72,14 @@ function ModuleRow({
             )}
           </div>
         ))}
+        {module.quiz && (
+          <div className="lesson" key={`${module.id}-quiz`}>
+            <HelpCircle className="icon-sm ic" style={{ color: "var(--accent)" }} />
+            <span>
+              {t("course.quizRow", { n: module.quiz.questionCount })}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -87,10 +94,8 @@ export default function CourseScreen() {
   const { data: course, isLoading } = useCourse(slug);
   const { data: reviews } = useCourseReviews(course?.id);
   const { data: enrollments } = useEnrollments();
-  const checkout = useCheckout();
+  const enroll = useEnroll();
 
-  const [payOpen, setPayOpen] = useState(false);
-  const [method, setMethod] = useState<"card" | "kaspi">("card");
   const [success, setSuccess] = useState(false);
 
   if (isLoading || !course) {
@@ -115,11 +120,10 @@ export default function CourseScreen() {
   const totalLessons = course.modules.reduce((s, m) => s + m.lessons.length, 0);
   const hasPreview = course.modules.some((m) => m.lessons.some((l) => l.isFreePreview));
 
-  async function buy() {
+  async function join() {
     if (!course) return;
     try {
-      await checkout.mutateAsync(course.id);
-      setPayOpen(false);
+      await enroll.mutateAsync(course.id);
       setSuccess(true);
     } catch {
       snack(t("errorGeneric"), "error");
@@ -133,16 +137,16 @@ export default function CourseScreen() {
           <div className="success__check">
             <Check className="icon" />
           </div>
-          <div className="t-title">{t("checkout.successTitle")}</div>
+          <div className="t-title">{t("enroll.successTitle")}</div>
           <div className="t-body muted">
-            {t("checkout.successBody", { title: course.title })}
+            {t("enroll.successBody", { title: course.title })}
           </div>
           <div style={{ height: 8 }} />
-          <Button variant="primary" block onClick={() => navigate("/learning")}>
-            {t("checkout.toLearning")}
+          <Button variant="primary" block onClick={() => navigate(`/learn/${course.id}`)}>
+            {t("enroll.start")}
           </Button>
-          <Button variant="text" onClick={() => navigate("/")}>
-            {t("learning.toCatalog")}
+          <Button variant="text" onClick={() => navigate("/learning")}>
+            {t("checkout.toLearning")}
           </Button>
         </div>
       </div>
@@ -290,80 +294,20 @@ export default function CourseScreen() {
         ) : (
           <>
             <div className="sticky-cta__price">
-              <span className="amt">{formatKzt(course.priceCents)}</span>
-              <span className="lbl">{t("course.oneTime")}</span>
+              <span className="amt">{t("course.free")}</span>
+              <span className="lbl">{t("course.fullAccess")}</span>
             </div>
-            <Button variant="primary" style={{ flex: 1 }} onClick={() => setPayOpen(true)}>
-              {t("course.buy")}
+            <Button
+              variant="primary"
+              style={{ flex: 1 }}
+              loading={enroll.isPending}
+              onClick={join}
+            >
+              {t("course.enrollFree")}
             </Button>
           </>
         )}
       </div>
-
-      <Sheet
-        open={payOpen}
-        onClose={() => setPayOpen(false)}
-        title={t("checkout.title")}
-        footer={
-          <Button
-            variant="primary"
-            block
-            loading={checkout.isPending}
-            leftIcon={<Lock className="icon-sm" />}
-            onClick={buy}
-          >
-            {t("checkout.pay", { price: formatKzt(course.priceCents) })}
-          </Button>
-        }
-      >
-        <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "4px 0 14px" }}>
-          <div className={`${gradient} cv-pat learn-card__thumb`} />
-          <div style={{ flex: 1 }}>
-            <div className="t-bodysb">{course.title}</div>
-            <div className="t-caption" style={{ marginTop: 2 }}>
-              {t("checkout.fullAccess")}
-            </div>
-          </div>
-        </div>
-        <hr className="divider" />
-        <div className="group-label" style={{ padding: "16px 0 10px" }}>
-          {t("checkout.method")}
-        </div>
-        <div className="pay-method" data-on={method === "card"} onClick={() => setMethod("card")}>
-          <div className="logo" style={{ background: "#1A1D1A" }}>
-            <CreditCard className="icon-sm" />
-          </div>
-          <div>
-            <div className="t-bodysb">{t("checkout.card")}</div>
-            <div className="t-meta">Visa · Mastercard</div>
-          </div>
-          <div className="radio" />
-        </div>
-        <div className="pay-method" data-on={method === "kaspi"} onClick={() => setMethod("kaspi")}>
-          <div className="logo" style={{ background: "#FF5A00" }}>
-            Kaspi
-          </div>
-          <div>
-            <div className="t-bodysb">Kaspi.kz</div>
-            <div className="t-meta">{t("checkout.kaspiHint")}</div>
-          </div>
-          <div className="radio" />
-        </div>
-        <div style={{ marginTop: 18 }}>
-          <div className="summary-row">
-            <span className="muted">{t("checkout.course")}</span>
-            <span>{course.title}</span>
-          </div>
-          <div className="summary-row">
-            <span className="muted">{t("checkout.price")}</span>
-            <span style={{ fontVariantNumeric: "tabular-nums" }}>{formatKzt(course.priceCents)}</span>
-          </div>
-          <div className="summary-row total">
-            <span>{t("checkout.total")}</span>
-            <span style={{ fontVariantNumeric: "tabular-nums" }}>{formatKzt(course.priceCents)}</span>
-          </div>
-        </div>
-      </Sheet>
     </div>
   );
 }

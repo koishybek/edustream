@@ -20,10 +20,61 @@ export interface ProgressLesson {
   watchedSeconds: number;
 }
 
+export interface ProgressQuiz {
+  id: string;
+  title: string;
+  questionCount: number;
+  passed: boolean;
+}
+
+export interface ProgressModule {
+  id: string;
+  title: string;
+  order: number;
+  lessons: ProgressLesson[];
+  quiz: ProgressQuiz | null;
+}
+
 export interface CourseProgress {
   progressPercent: number;
   status: "ACTIVE" | "COMPLETED";
-  lessons: ProgressLesson[];
+  modules: ProgressModule[];
+}
+
+// ---- quiz ----
+
+export interface QuizOption {
+  id: string;
+  text: string;
+  order: number;
+}
+export interface QuizQuestion {
+  id: string;
+  text: string;
+  order: number;
+  options: QuizOption[];
+}
+export interface QuizDetail {
+  id: string;
+  title: string;
+  passingScore: number;
+  questions: QuizQuestion[];
+}
+export interface QuizResultItem {
+  questionId: string;
+  correctOptionId: string | null;
+  chosenOptionId: string | null;
+  correct: boolean;
+  explanation: string | null;
+}
+export interface QuizResult {
+  score: number;
+  passed: boolean;
+  passingScore: number;
+  correctCount: number;
+  totalQuestions: number;
+  progressPercent: number;
+  results: QuizResultItem[];
 }
 
 export function useEnrollments() {
@@ -42,13 +93,15 @@ export function useCourseProgress(courseId: string | undefined) {
   });
 }
 
-export function useCheckout() {
+/** Free, idempotent enrollment (replaces the old paid checkout). */
+export function useEnroll() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (courseId: string) =>
-      (await api.post(`/courses/${courseId}/checkout`, {})).data,
-    onSuccess: () => {
+      (await api.post(`/courses/${courseId}/enroll`, {})).data,
+    onSuccess: (_data, courseId) => {
       qc.invalidateQueries({ queryKey: ["enrollments"] });
+      qc.invalidateQueries({ queryKey: ["course-progress", courseId] });
     },
   });
 }
@@ -65,6 +118,38 @@ export function useRecordProgress(courseId: string | undefined) {
         await api.post<{ progressPercent: number }>(
           `/lessons/${input.lessonId}/progress`,
           { completed: input.completed, watchedSeconds: input.watchedSeconds },
+        )
+      ).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["course-progress", courseId] });
+      qc.invalidateQueries({ queryKey: ["enrollments"] });
+    },
+  });
+}
+
+export function useQuiz(
+  courseId: string | undefined,
+  quizId: string | undefined,
+) {
+  return useQuery({
+    queryKey: ["quiz", courseId, quizId],
+    enabled: !!courseId && !!quizId,
+    queryFn: async () =>
+      (await api.get<QuizDetail>(`/me/courses/${courseId}/quiz/${quizId}`)).data,
+  });
+}
+
+export function useSubmitQuiz(courseId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      quizId: string;
+      answers: { questionId: string; optionId: string }[];
+    }) =>
+      (
+        await api.post<QuizResult>(
+          `/me/courses/${courseId}/quiz/${input.quizId}/submit`,
+          { answers: input.answers },
         )
       ).data,
     onSuccess: () => {

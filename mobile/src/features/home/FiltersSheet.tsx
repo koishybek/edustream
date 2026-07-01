@@ -19,25 +19,12 @@ const DURATIONS: { key: string; minDuration?: number; maxDuration?: number }[] =
   { key: "gt10", minDuration: 600 },
 ];
 
-/** Price buckets in cents (KZT). */
-const PRICES: { key: string; minPrice?: number; maxPrice?: number }[] = [
-  { key: "lt30", maxPrice: 3_000_000 },
-  { key: "30to45", minPrice: 3_000_000, maxPrice: 4_500_000 },
-  { key: "gt45", minPrice: 4_500_000 },
-];
-
 const SORTS: CourseSort[] = ["popular", "rating", "newest"];
 
 /** Filters that the sheet edits (search stays on the home search field). */
 export type SheetFilters = Pick<
   CourseFilters,
-  | "categoryId"
-  | "level"
-  | "minPrice"
-  | "maxPrice"
-  | "minDuration"
-  | "maxDuration"
-  | "sort"
+  "categoryId" | "level" | "minDuration" | "maxDuration" | "sort"
 >;
 
 const EMPTY: SheetFilters = { sort: "popular" };
@@ -66,9 +53,6 @@ export function FiltersSheet({
   const durationKey = DURATIONS.find(
     (d) =>
       d.minDuration === draft.minDuration && d.maxDuration === draft.maxDuration,
-  )?.key;
-  const priceKey = PRICES.find(
-    (p) => p.minPrice === draft.minPrice && p.maxPrice === draft.maxPrice,
   )?.key;
 
   function patch(p: Partial<SheetFilters>) {
@@ -152,27 +136,6 @@ export function FiltersSheet({
             }
           >
             {t(`filters.dur.${d.key}`)}
-          </Chip>
-        ))}
-      </div>
-
-      <div className="group-label" style={{ padding: "18px 0 8px" }}>
-        {t("filters.price")}
-      </div>
-      <div className="chip-wrap">
-        {PRICES.map((p) => (
-          <Chip
-            key={p.key}
-            active={priceKey === p.key}
-            onClick={() =>
-              patch(
-                priceKey === p.key
-                  ? { minPrice: undefined, maxPrice: undefined }
-                  : { minPrice: p.minPrice, maxPrice: p.maxPrice },
-              )
-            }
-          >
-            {t(`filters.price.${p.key}`)}
           </Chip>
         ))}
       </div>

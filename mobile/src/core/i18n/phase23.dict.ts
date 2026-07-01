@@ -1,9 +1,9 @@
 import type { AppLocale } from "../auth/types";
 
 /**
- * Phase 2/3 strings (course detail, checkout, learning, player), merged into
- * the base dictionaries by the I18nProvider. Kept separate so the large base
- * file stays readable.
+ * Course / enrollment / learning / player / quiz strings, merged into the base
+ * dictionaries by the I18nProvider. Kept separate so the large base file stays
+ * readable. Courses are free — no payment/price copy here.
  */
 export const extraDict: Record<AppLocale, Record<string, string>> = {
   ru: {
@@ -18,22 +18,17 @@ export const extraDict: Record<AppLocale, Record<string, string>> = {
     "course.instructor": "Преподаватель",
     "course.hours": "{hours} часов",
     "course.continue": "Продолжить",
-    "course.oneTime": "единоразово · доступ навсегда",
-    "course.buy": "Купить курс",
+    "course.free": "Бесплатно",
+    "course.fullAccess": "Полный доступ ко всем урокам",
+    "course.enrollFree": "Записаться бесплатно",
+    "course.quizRow": "Тест модуля · {n} вопросов",
 
-    "checkout.title": "Оплата",
-    "checkout.successTitle": "Оплата прошла успешно",
-    "checkout.successBody":
-      "Курс «{title}» добавлен в ваше обучение. Доступ открыт навсегда.",
+    "enroll.successTitle": "Вы записаны!",
+    "enroll.successBody":
+      "Курс «{title}» добавлен в ваше обучение — можно начинать.",
+    "enroll.start": "Начать обучение",
+
     "checkout.toLearning": "Перейти к обучению",
-    "checkout.fullAccess": "Полный доступ · сертификат",
-    "checkout.method": "Способ оплаты",
-    "checkout.card": "Банковская карта",
-    "checkout.kaspiHint": "Оплата через приложение",
-    "checkout.course": "Курс",
-    "checkout.price": "Цена",
-    "checkout.total": "Итого",
-    "checkout.pay": "Оплатить {price}",
 
     "learning.inProgress": "Прогресс",
     "learning.notStarted": "Не начат",
@@ -41,11 +36,25 @@ export const extraDict: Record<AppLocale, Record<string, string>> = {
     "learning.start": "Начать курс",
     "learning.countLabel": "{count} курсов",
 
-    "player.lessons": "Уроки",
-    "player.markDone": "Отметить выполненным",
+    "player.lessons": "Содержание курса",
+    "player.markDone": "Урок пройден",
     "player.courseProgress": "Прогресс курса",
-    "player.lessonN": "Урок {n}",
     "player.completed": "Курс завершён!",
+
+    "quiz.takeModuleTest": "Пройти тест модуля",
+    "quiz.moduleTest": "Тест модуля",
+    "quiz.questionsN": "{n} вопросов",
+    "quiz.passedShort": "сдан",
+    "quiz.instructions": "{n} вопросов · проходной балл {pass}%",
+    "quiz.submit": "Проверить ответы",
+    "quiz.answerAll": "Ответьте на все (осталось {left})",
+    "quiz.passed": "Тест сдан!",
+    "quiz.failed": "Тест не сдан",
+    "quiz.scoreLine": "{correct} из {total} верно · {score}%",
+    "quiz.retry": "Пересдать",
+    "quiz.continue": "Продолжить",
+    "quiz.empty": "В этом тесте пока нет вопросов.",
+    "quiz.back": "Назад к курсу",
   },
   en: {
     "course.freePreview": "Free preview",
@@ -59,22 +68,17 @@ export const extraDict: Record<AppLocale, Record<string, string>> = {
     "course.instructor": "Instructor",
     "course.hours": "{hours} hours",
     "course.continue": "Continue",
-    "course.oneTime": "one-time · lifetime access",
-    "course.buy": "Buy course",
+    "course.free": "Free",
+    "course.fullAccess": "Full access to every lesson",
+    "course.enrollFree": "Enroll for free",
+    "course.quizRow": "Module quiz · {n} questions",
 
-    "checkout.title": "Checkout",
-    "checkout.successTitle": "Payment successful",
-    "checkout.successBody":
-      "“{title}” was added to your learning. Access is yours forever.",
+    "enroll.successTitle": "You’re enrolled!",
+    "enroll.successBody":
+      "“{title}” was added to your learning — you can start now.",
+    "enroll.start": "Start learning",
+
     "checkout.toLearning": "Go to my learning",
-    "checkout.fullAccess": "Full access · certificate",
-    "checkout.method": "Payment method",
-    "checkout.card": "Bank card",
-    "checkout.kaspiHint": "Pay via the app",
-    "checkout.course": "Course",
-    "checkout.price": "Price",
-    "checkout.total": "Total",
-    "checkout.pay": "Pay {price}",
 
     "learning.inProgress": "Progress",
     "learning.notStarted": "Not started",
@@ -82,11 +86,25 @@ export const extraDict: Record<AppLocale, Record<string, string>> = {
     "learning.start": "Start course",
     "learning.countLabel": "{count} courses",
 
-    "player.lessons": "Lessons",
-    "player.markDone": "Mark as complete",
+    "player.lessons": "Course contents",
+    "player.markDone": "Lesson complete",
     "player.courseProgress": "Course progress",
-    "player.lessonN": "Lesson {n}",
     "player.completed": "Course complete!",
+
+    "quiz.takeModuleTest": "Take the module quiz",
+    "quiz.moduleTest": "Module quiz",
+    "quiz.questionsN": "{n} questions",
+    "quiz.passedShort": "passed",
+    "quiz.instructions": "{n} questions · pass mark {pass}%",
+    "quiz.submit": "Check answers",
+    "quiz.answerAll": "Answer all ({left} left)",
+    "quiz.passed": "Quiz passed!",
+    "quiz.failed": "Not passed yet",
+    "quiz.scoreLine": "{correct} of {total} correct · {score}%",
+    "quiz.retry": "Try again",
+    "quiz.continue": "Continue",
+    "quiz.empty": "This quiz has no questions yet.",
+    "quiz.back": "Back to course",
   },
   kz: {
     "course.freePreview": "Тегін превью",
@@ -100,22 +118,17 @@ export const extraDict: Record<AppLocale, Record<string, string>> = {
     "course.instructor": "Оқытушы",
     "course.hours": "{hours} сағат",
     "course.continue": "Жалғастыру",
-    "course.oneTime": "бір рет · мәңгілік қолжетімділік",
-    "course.buy": "Курсты сатып алу",
+    "course.free": "Тегін",
+    "course.fullAccess": "Барлық сабаққа толық қолжетімділік",
+    "course.enrollFree": "Тегін тіркелу",
+    "course.quizRow": "Модуль тесті · {n} сұрақ",
 
-    "checkout.title": "Төлем",
-    "checkout.successTitle": "Төлем сәтті өтті",
-    "checkout.successBody":
-      "«{title}» курсы оқуыңызға қосылды. Қолжетімділік мәңгілік ашық.",
+    "enroll.successTitle": "Сіз тіркелдіңіз!",
+    "enroll.successBody":
+      "«{title}» курсы оқуыңызға қосылды — бастауға болады.",
+    "enroll.start": "Оқуды бастау",
+
     "checkout.toLearning": "Оқуға өту",
-    "checkout.fullAccess": "Толық қолжетімділік · сертификат",
-    "checkout.method": "Төлем тәсілі",
-    "checkout.card": "Банк картасы",
-    "checkout.kaspiHint": "Қолданба арқылы төлеу",
-    "checkout.course": "Курс",
-    "checkout.price": "Бағасы",
-    "checkout.total": "Барлығы",
-    "checkout.pay": "{price} төлеу",
 
     "learning.inProgress": "Прогресс",
     "learning.notStarted": "Басталмаған",
@@ -123,10 +136,24 @@ export const extraDict: Record<AppLocale, Record<string, string>> = {
     "learning.start": "Курсты бастау",
     "learning.countLabel": "{count} курс",
 
-    "player.lessons": "Сабақтар",
-    "player.markDone": "Орындалды деп белгілеу",
+    "player.lessons": "Курс мазмұны",
+    "player.markDone": "Сабақ аяқталды",
     "player.courseProgress": "Курс прогресі",
-    "player.lessonN": "{n}-сабақ",
     "player.completed": "Курс аяқталды!",
+
+    "quiz.takeModuleTest": "Модуль тестін тапсыру",
+    "quiz.moduleTest": "Модуль тесті",
+    "quiz.questionsN": "{n} сұрақ",
+    "quiz.passedShort": "тапсырылды",
+    "quiz.instructions": "{n} сұрақ · өту балы {pass}%",
+    "quiz.submit": "Жауаптарды тексеру",
+    "quiz.answerAll": "Барлығына жауап беріңіз ({left} қалды)",
+    "quiz.passed": "Тест тапсырылды!",
+    "quiz.failed": "Тест тапсырылмады",
+    "quiz.scoreLine": "{total} ішінен {correct} дұрыс · {score}%",
+    "quiz.retry": "Қайта тапсыру",
+    "quiz.continue": "Жалғастыру",
+    "quiz.empty": "Бұл тесте әзірге сұрақ жоқ.",
+    "quiz.back": "Курсқа оралу",
   },
 };

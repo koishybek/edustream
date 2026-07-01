@@ -14,8 +14,6 @@ export interface CourseCard {
   title: string;
   slug: string;
   description: string;
-  priceCents: number;
-  currency: string;
   level: Level;
   durationMinutes: number;
   ratingAvg: number;
@@ -40,6 +38,8 @@ export interface CourseModule {
   title: string;
   order: number;
   lessons: CourseDetailLesson[];
+  /** Present when the module has an end-of-module quiz. */
+  quiz: { id: string; questionCount: number } | null;
 }
 
 /** Full public course detail = CourseCard fields + the module/lesson tree. */
@@ -71,8 +71,6 @@ export interface CourseFilters {
   search?: string;
   categoryId?: string;
   level?: Level;
-  minPrice?: number;
-  maxPrice?: number;
   minDuration?: number;
   maxDuration?: number;
   sort?: CourseSort;
