@@ -135,6 +135,7 @@ model Enrollment {
   status          EnrollmentStatus @default(ACTIVE)
   progressPercent Int              @default(0)
   createdAt       DateTime         @default(now())
+  completedAt     DateTime?
 
   lessonProgress LessonProgress[]
   quizAttempts   QuizAttempt[]

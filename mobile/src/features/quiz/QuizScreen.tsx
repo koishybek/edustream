@@ -138,7 +138,15 @@ export default function QuizScreen() {
 
         <div className="sticky-cta">
           {result.passed ? (
-            <Button variant="primary" block onClick={back}>
+            <Button
+              variant="primary"
+              block
+              onClick={() =>
+                result.progressPercent === 100
+                  ? navigate(`/learn/${courseId}/complete`)
+                  : back()
+              }
+            >
               {t("quiz.continue")}
             </Button>
           ) : (

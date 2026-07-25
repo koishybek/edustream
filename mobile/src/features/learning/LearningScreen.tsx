@@ -47,6 +47,7 @@ export default function LearningScreen() {
             {enrollments.map((e) => {
               const { gradient, Icon } = categoryVisual(e.course.category.slug);
               const started = e.progressPercent > 0;
+              const completed = e.status === "COMPLETED";
               return (
                 <div
                   className="learn-card"
@@ -79,9 +80,23 @@ export default function LearningScreen() {
                     </div>
                     <Progress value={e.progressPercent} />
                   </div>
-                  <Button variant={started ? "tonal" : "primary"} small block>
-                    {started ? t("learning.continue") : t("learning.start")}
-                  </Button>
+                  {completed ? (
+                    <Button
+                      variant="tonal"
+                      small
+                      block
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        navigate(`/learn/${e.course.id}/complete`);
+                      }}
+                    >
+                      {t("learning.completedBadge")}
+                    </Button>
+                  ) : (
+                    <Button variant={started ? "tonal" : "primary"} small block>
+                      {started ? t("learning.continue") : t("learning.start")}
+                    </Button>
+                  )}
                 </div>
               );
             })}

@@ -193,6 +193,60 @@ describe('Learning + Quizzes (e2e)', () => {
       .expect(403);
   });
 
+  it('completing all lessons + quizzes sets completedAt and COMPLETED', async () => {
+    const lessons = await prisma.lesson.findMany({
+      where: { module: { courseId } },
+    });
+    for (const l of lessons) {
+      await request(app.getHttpServer())
+        .post(`/api/v1/lessons/${l.id}/progress`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ completed: true, watchedSeconds: l.durationSeconds })
+        .expect(201);
+    }
+
+    const quizzes = await prisma.quiz.findMany({
+      where: { module: { courseId } },
+    });
+    for (const qz of quizzes) {
+      const questions = await prisma.question.findMany({
+        where: { quizId: qz.id },
+        include: { options: true },
+      });
+      const answers = questions.map((q) => ({
+        questionId: q.id,
+        optionId: q.options.find((o) => o.isCorrect)!.id,
+      }));
+      await request(app.getHttpServer())
+        .post(`/api/v1/me/courses/${courseId}/quiz/${qz.id}/submit`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ answers })
+        .expect(200);
+    }
+
+    const res = await request(app.getHttpServer())
+      .get(`/api/v1/me/courses/${courseId}/progress`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body.progressPercent).toBe(100);
+    expect(res.body.status).toBe('COMPLETED');
+    expect(res.body.completedAt).toEqual(expect.any(String));
+
+    // completedAt is stamped once and stable on a later recompute.
+    const firstCompletedAt = res.body.completedAt as string;
+    await request(app.getHttpServer())
+      .post(`/api/v1/lessons/${lessons[0].id}/progress`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ completed: true, watchedSeconds: lessons[0].durationSeconds })
+      .expect(201);
+    const again = await request(app.getHttpServer())
+      .get(`/api/v1/me/courses/${courseId}/progress`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(again.body.completedAt).toBe(firstCompletedAt);
+  });
+
   // ---- helpers (read correct answers straight from the DB) ----
 
   async function firstQuizId(): Promise<string> {

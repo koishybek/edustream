@@ -38,6 +38,7 @@ export interface ProgressModule {
 export interface CourseProgress {
   progressPercent: number;
   status: "ACTIVE" | "COMPLETED";
+  completedAt: string | null;
   modules: ProgressModule[];
 }
 

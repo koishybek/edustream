@@ -79,6 +79,7 @@ export class LearningService {
     return {
       progressPercent: enrollment.progressPercent,
       status: enrollment.status,
+      completedAt: enrollment.completedAt,
       modules: modules.map((m) => ({
         id: m.id,
         title: m.title,
@@ -277,11 +278,19 @@ export class LearningService {
     const done = doneLessons + passedQuizzes.length;
     const progressPercent = units === 0 ? 0 : Math.round((done / units) * 100);
 
+    const nowCompleted = progressPercent >= 100;
+    const current = await this.prisma.enrollment.findUniqueOrThrow({
+      where: { id: enrollmentId },
+      select: { completedAt: true },
+    });
     await this.prisma.enrollment.update({
       where: { id: enrollmentId },
       data: {
         progressPercent,
-        status: progressPercent >= 100 ? 'COMPLETED' : 'ACTIVE',
+        status: nowCompleted ? 'COMPLETED' : 'ACTIVE',
+        // Stamp once, on first reaching 100%; never overwrite an existing stamp.
+        completedAt:
+          nowCompleted && !current.completedAt ? new Date() : undefined,
       },
     });
     return progressPercent;
