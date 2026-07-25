@@ -76,6 +76,7 @@ Built **phase by phase**; each phase runs end-to-end before the next.
 - ✅ **Phase 2 — Catalog:** `GET /courses` search/filter/sort/pagination, course detail (curriculum + reviews), filters sheet, real Home.
 - ✅ **Phase 3 — Learning (free):** free idempotent enrollment, My Learning, **YouTube video player**, **module-end quizzes that gate progress**, progress recompute over lessons + quizzes.
 - ✅ **Phase 4 — Admin:** dashboard stats, course CRUD (modules/lessons editor), users table — role-guarded.
+- ✅ **Phase 5 — Complete:** students leave/update a course **review** (stars + comment) from the app; a **course-completion screen** ("Курс пройден") with a 🎓 seal, shown at 100% and linked from My Learning.
 
 ## Learning model
 
@@ -93,7 +94,7 @@ Built **phase by phase**; each phase runs end-to-end before the next.
 ## Tests
 
 ```bash
-cd backend && npm run test:e2e   # auth + catalog + learning/quiz e2e (27 tests)
+cd backend && npm run test:e2e   # auth + catalog + learning/quiz e2e (29 tests)
 cd mobile  && npx tsc --noEmit   # student app typecheck
 cd admin   && npx tsc --noEmit   # admin typecheck
 ```
