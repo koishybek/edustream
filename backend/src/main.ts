@@ -35,9 +35,10 @@ async function bootstrap() {
   });
 
   const port = Number(config.get('PORT') ?? 4000);
-  await app.listen(port);
+  // Bind all interfaces so container platforms (Railway, etc.) can route to it.
+  await app.listen(port, '0.0.0.0');
   // eslint-disable-next-line no-console
-  console.log(`EduStream API listening on http://localhost:${port}/api/v1`);
+  console.log(`EduStream API listening on port ${port} (prefix /api/v1)`);
 }
 
 void bootstrap();

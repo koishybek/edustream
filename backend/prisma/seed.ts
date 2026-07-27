@@ -920,6 +920,14 @@ const REVIEW_COMMENTS = [
 ];
 
 async function main() {
+  // Deploy safety: when SEED_IF_EMPTY is set (Railway start command), seed only
+  // once — skip if already populated so container restarts never wipe real data.
+  // Locally, `npm run db:seed` (no env flag) always reseeds.
+  if (process.env.SEED_IF_EMPTY && (await prisma.course.count()) > 0) {
+    console.log('Seed skipped — database already populated.');
+    return;
+  }
+
   // Clean (FK-safe order) so the seed is re-runnable.
   await prisma.quizAttempt.deleteMany();
   await prisma.lessonProgress.deleteMany();
