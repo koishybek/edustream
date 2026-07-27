@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useI18n } from "../../core/i18n/I18nProvider";
 import type { CourseCard } from "../../core/catalog/types";
 import { durationHours } from "../../core/catalog/format";
-import { categoryVisual, Cover } from "../../ui/Cover";
+import { CourseCover } from "../../ui/Cover";
 import { RatingStars } from "../../ui/RatingStars";
 
 /**
@@ -20,7 +20,6 @@ export function CourseCardView({
 }) {
   const { t, locale } = useI18n();
   const navigate = useNavigate();
-  const { gradient, Icon } = categoryVisual(course.category.slug);
 
   return (
     <button
@@ -28,14 +27,18 @@ export function CourseCardView({
       className="course-card"
       onClick={() => navigate(`/course/${course.slug}`)}
     >
-      <Cover gradient={gradient} Icon={Icon} className="course-card__cover">
+      <CourseCover
+        image={course.coverImageUrl}
+        slug={course.category.slug}
+        className="course-card__cover"
+      >
         {free && (
           <span className="course-card__badge">
             <Play className="icon-sm" style={{ width: 11, height: 11 }} />
             {t("course.preview")}
           </span>
         )}
-      </Cover>
+      </CourseCover>
       <div className="course-card__body">
         <div className="course-card__title">{course.title}</div>
         <div className="course-card__meta">

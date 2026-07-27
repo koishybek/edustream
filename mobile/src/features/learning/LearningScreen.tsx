@@ -6,7 +6,7 @@ import { useI18n } from "../../core/i18n/I18nProvider";
 import { AppBar } from "../../ui/AppBar";
 import { BottomNav } from "../../ui/BottomNav";
 import { Button } from "../../ui/Button";
-import { categoryVisual } from "../../ui/Cover";
+import { CourseCover } from "../../ui/Cover";
 import { EmptyState } from "../../ui/EmptyState";
 import { Progress } from "../../ui/Progress";
 import { Spinner } from "../../ui/Spinner";
@@ -45,7 +45,6 @@ export default function LearningScreen() {
               </div>
             </div>
             {enrollments.map((e) => {
-              const { gradient, Icon } = categoryVisual(e.course.category.slug);
               const started = e.progressPercent > 0;
               const completed = e.status === "COMPLETED";
               return (
@@ -55,12 +54,11 @@ export default function LearningScreen() {
                   onClick={() => navigate(`/learn/${e.course.id}`)}
                 >
                   <div className="learn-card__top">
-                    <div
-                      className={`${gradient} cv-pat learn-card__thumb`}
-                      style={{ display: "flex", alignItems: "flex-end", justifyContent: "flex-end", padding: 6, color: "rgba(255,255,255,.6)" }}
-                    >
-                      <Icon className="icon-sm" />
-                    </div>
+                    <CourseCover
+                      image={e.course.coverImageUrl}
+                      slug={e.course.category.slug}
+                      className="learn-card__thumb"
+                    />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="t-bodysb" style={{ lineHeight: 1.3 }}>
                         {e.course.title}

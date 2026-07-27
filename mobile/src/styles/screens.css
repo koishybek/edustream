@@ -39,7 +39,7 @@
 
 .rail { display: flex; gap: 8px; overflow-x: auto; padding: 2px 18px 4px; scrollbar-width: none; }
 .rail::-webkit-scrollbar { display: none; }
-.h-scroll { display: flex; gap: 14px; overflow-x: auto; padding: 2px 18px 6px; scrollbar-width: none; }
+.h-scroll { display: flex; align-items: flex-start; gap: 14px; overflow-x: auto; padding: 2px 18px 6px; scrollbar-width: none; }
 .h-scroll::-webkit-scrollbar { display: none; }
 .h-scroll .course-card { width: 230px; flex: none; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 4px 18px 24px; }
@@ -52,6 +52,11 @@
 .cv-pat::before { content:''; position:absolute; inset:0; background-image: radial-gradient(circle at 78% 22%, rgba(255,255,255,.22) 0, transparent 40%), radial-gradient(circle at 20% 90%, rgba(255,255,255,.10) 0, transparent 45%); }
 .cv-ico { position: absolute; right: 12px; bottom: 12px; color: rgba(255,255,255,.5); }
 .cv-ico .icon-lg { width: 30px; height: 30px; stroke-width: 1.5; }
+
+/* Real photo cover (YouTube lesson thumbnail) over the gradient fallback. */
+.cover { position: relative; overflow: hidden; }
+.cover__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.cover__scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(14,18,15,.52), rgba(14,18,15,.06) 55%, transparent); }
 
 /* ---------- Splash ---------- */
 .splash { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: var(--bg); }
@@ -96,7 +101,7 @@
 
 /* ---------- Course detail ---------- */
 .course-hero { aspect-ratio: 16/10; display: flex; align-items: flex-end; padding: 14px; position: relative; }
-.hero-badge { position: absolute; top: 14px; left: 14px; }
+.hero-badge { position: absolute; bottom: 14px; left: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
 .meta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 16px 18px 4px; }
 .meta-row .mi { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); font-weight: 550; }
 .meta-row .mi .icon-sm { color: var(--text-2); }

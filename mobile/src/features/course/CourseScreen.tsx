@@ -26,7 +26,7 @@ import { useI18n } from "../../core/i18n/I18nProvider";
 import { Avatar } from "../../ui/Avatar";
 import { Badge } from "../../ui/Badge";
 import { Button } from "../../ui/Button";
-import { categoryVisual } from "../../ui/Cover";
+import { CourseCover } from "../../ui/Cover";
 import { RatingStars } from "../../ui/RatingStars";
 import { Spinner } from "../../ui/Spinner";
 import { useSnackbar } from "../../ui/Snackbar";
@@ -136,7 +136,6 @@ export default function CourseScreen() {
     );
   }
 
-  const { gradient, Icon } = categoryVisual(course.category.slug);
   const enrolled = !!enrollments?.some((e) => e.course.id === course.id);
   const totalLessons = course.modules.reduce((s, m) => s + m.lessons.length, 0);
   const hasPreview = course.modules.some((m) => m.lessons.some((l) => l.isFreePreview));
@@ -192,17 +191,18 @@ export default function CourseScreen() {
     <div className="screen">
       <div className="screen__scroll" style={{ paddingBottom: 96 }}>
         <div style={{ position: "relative" }}>
-          <div className={`${gradient} cv-pat course-hero`}>
+          <CourseCover
+            image={course.coverImageUrl}
+            slug={course.category.slug}
+            className="course-hero"
+          >
             {hasPreview && (
               <span className="hero-badge badge badge--free">
                 <PlayCircle className="icon-sm" style={{ width: 12, height: 12 }} />
                 {t("course.freePreview")}
               </span>
             )}
-            <div className="cv-ico">
-              <Icon className="icon-lg" />
-            </div>
-          </div>
+          </CourseCover>
           <div
             className="appbar pad"
             style={{ position: "absolute", top: 0, left: 0, right: 0, paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}

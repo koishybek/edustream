@@ -7,13 +7,16 @@ const prisma = new PrismaClient();
 // on ESG & sustainability, mapped to course categories. Swap freely.
 const youtube = (id: string) => `https://www.youtube.com/watch?v=${id}`;
 
+// 24 real, oembed-verified, embedding-friendly ESG/sustainability videos
+// (TED, TED-Ed, TEDx, Kurzgesagt, Ellen MacArthur Foundation). 4 per category —
+// lessons round-robin through them, and each course cover = its first one.
 const VIDEOS_BY_CATEGORY: Record<string, string[]> = {
-  'esg-reporting': ['HyDteUfammQ', 'Kl3VVrggKz4'], // Corporate ESG; First sustainable generation
-  'circular-economy': ['aSCQd6A19YQ', 'Kl3VVrggKz4'], // Circular economy (MacArthur)
-  climate: ['xKxrkht7CpY', 'Kl3VVrggKz4'], // How solar panels work; sustainability
-  social: ['HyDteUfammQ', 'Kl3VVrggKz4'],
-  water: ['otrpxtAmDAk', 'OCzYdNSJF-k'], // Fresh water scarcity; running out of clean water
-  biodiversity: ['GK_vRtHJZu4', 'Kl3VVrggKz4'], // Why biodiversity matters
+  'esg-reporting': ['HyDteUfammQ', 'rpOwTspdwkI', '5AUDasE1h1k', 'Rhcrbcg8HBw'],
+  'circular-economy': ['aSCQd6A19YQ', 'zCRKvDyyHmI', 'PkfkMNnRO14', 'KHyN4KP-lU8'],
+  climate: ['xKxrkht7CpY', 'Kl3VVrggKz4', 'ipVxxxqwBQw', 'wbR-5mHI6bo'],
+  social: ['cZ7LzE3u7Bw', 'D9Ihs241zeg', 'q2TewSL_Egk', 'nDgIVseTkuE'],
+  water: ['otrpxtAmDAk', 'OCzYdNSJF-k', 'Pz6AQXQGupQ', 'jdOjB0j329g'],
+  biodiversity: ['GK_vRtHJZu4', 'hRGg5it5FMI', 't3I9gDocYdk', 'xxnuqSZyhQg'],
 };
 const GENERAL_VIDEOS = [
   'Kl3VVrggKz4',
@@ -31,7 +34,13 @@ function makeVideoPicker(categorySlug: string) {
   return () => youtube(pool[i++ % pool.length]);
 }
 
-const cover = (seed: string) => `https://picsum.photos/seed/${seed}/800/450`;
+// Course cover = the crisp YouTube thumbnail of its first lesson's video, so the
+// cover always matches real, topical content (the client falls back to mqdefault
+// then a brand gradient if a given video has no maxres thumbnail).
+const ytFirstId = (categorySlug: string) =>
+  (VIDEOS_BY_CATEGORY[categorySlug] ?? GENERAL_VIDEOS)[0];
+const ytCover = (categorySlug: string) =>
+  `https://img.youtube.com/vi/${ytFirstId(categorySlug)}/maxresdefault.jpg`;
 const hash = (pw: string) => bcrypt.hash(pw, 10);
 
 interface OptionSeed {
@@ -1008,7 +1017,7 @@ async function main() {
         level: c.level,
         durationMinutes,
         instructorId: instructors[c.instructor].id,
-        coverImageUrl: cover(c.slug),
+        coverImageUrl: ytCover(c.categorySlug),
         status: 'PUBLISHED',
         modules: {
           create: c.modules.map((m, mi) => ({
