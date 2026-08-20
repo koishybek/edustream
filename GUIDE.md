@@ -11,9 +11,8 @@ completion screens, and reviews — plus a web admin.
 | 📱 **Student app (PWA)** | https://mobile-three-tau.vercel.app | `student@demo.io` / `Student123!` |
 | 🛠 **Admin** | https://admin-azure-five-52.vercel.app | `admin@demo.io` / `Admin123!` |
 
-> The frontends are hosted permanently on Vercel. During the demo the API runs
-> through a temporary tunnel from the dev machine — see **Hosting notes** at the end
-> for making it 24/7 on Railway.
+> Fully hosted & **permanent** — frontends + API on **Vercel**, database on **Neon**.
+> No local machine required; open the links any time. See **Hosting notes** at the end.
 
 ---
 
@@ -99,18 +98,23 @@ The demo student is pre-enrolled in *The Architecture of Circular Economies* at 
 
 ---
 
-## Hosting notes (making it permanent)
+## Hosting notes (architecture)
 
-Right now: **frontends on Vercel (permanent)**, **API + Postgres via a temporary tunnel
-from the dev machine** (works while that machine + tunnel are running).
+Everything runs in the cloud, on free tiers — **no dev machine involved**:
 
-To make the API 24/7 (repo already on GitHub at `koishybek/edustream`, configs ready):
-1. Follow **[DEPLOY.md](DEPLOY.md)** to deploy the backend + Postgres to **Railway**
-   (~15 min; set a strong admin via `ADMIN_EMAIL` / `ADMIN_PASSWORD` — the demo admin is
-   dev-only and never seeded in production).
-2. In both Vercel projects, change the API env var to the Railway URL and redeploy:
-   - Student app: `VITE_API_BASE_URL = https://<railway>/api/v1`
-   - Admin: `NEXT_PUBLIC_API_BASE_URL = https://<railway>/api/v1`
-3. Set the backend `CORS_ORIGINS` to the two Vercel URLs.
+| Layer | Host | URL |
+|---|---|---|
+| Student PWA (Vite) | Vercel | https://mobile-three-tau.vercel.app |
+| Admin (Next.js) | Vercel | https://admin-azure-five-52.vercel.app |
+| API (NestJS serverless) | Vercel | https://backend-zeta-one-20.vercel.app/api/v1 |
+| Database (Postgres) | Neon | (serverless Postgres) |
 
-That's it — a fully hosted, production-hardened build.
+- The NestJS API is deployed as a **Vercel serverless function** (`backend/api/index.js`
+  → `dist/serverless.js`), connected to **Neon** via `DATABASE_URL`.
+- Secrets (JWT, DB URL, CORS origins) are Vercel environment variables — not in the repo.
+- To redeploy after code changes: `vercel deploy --prod` from `backend/`, `mobile/`, or
+  `admin/`. The frontends' `*_API_BASE_URL` build env points at the API URL above.
+- An alternative container-based deploy (Railway + a persistent Postgres) is documented in
+  **[DEPLOY.md](DEPLOY.md)** if you ever want long-running (non-serverless) hosting.
+
+Repo: `koishybek/edustream` on GitHub.
