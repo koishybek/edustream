@@ -14,6 +14,11 @@ export function Sheet({
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  // The sheet stays mounted (slid off-screen) so it can animate. When closed,
+  // mark it inert + aria-hidden so its controls leave the tab order and the
+  // accessibility tree. Typed loosely because React 18's DOM typings predate
+  // the `inert` attribute; it still renders to the DOM.
+  const closedAttrs = open ? {} : { inert: "", "aria-hidden": true };
   return (
     <>
       <div
@@ -21,7 +26,12 @@ export function Sheet({
         onClick={onClose}
         style={{ pointerEvents: open ? "auto" : "none" }}
       />
-      <div className={`sheet${open ? " show" : ""}`} role="dialog" aria-modal="true">
+      <div
+        className={`sheet${open ? " show" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        {...closedAttrs}
+      >
         <div className="sheet__grab" />
         <div className="sheet__head">
           <div className="t-title">{title}</div>

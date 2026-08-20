@@ -66,6 +66,7 @@ export class AuthService {
     try {
       payload = await this.jwt.verifyAsync(dto.refreshToken, {
         secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+        algorithms: ['HS256'],
       });
     } catch {
       throw new UnauthorizedException('Invalid or expired refresh token');

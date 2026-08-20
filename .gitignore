@@ -49,3 +49,6 @@ yarn-error.log*
 
 # Playwright MCP scratch
 .playwright-mcp/
+
+# Vercel
+.vercel/

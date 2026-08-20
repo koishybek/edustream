@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
 import { I18nProvider } from "./core/i18n/I18nProvider";
 import { router } from "./core/router";
+import { ErrorBoundary } from "./ui/ErrorBoundary";
 import { SnackbarProvider } from "./ui/Snackbar";
 import "./index.css";
 
@@ -18,7 +19,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
         <SnackbarProvider>
-          <RouterProvider router={router} />
+          <ErrorBoundary>
+            <RouterProvider router={router} />
+          </ErrorBoundary>
         </SnackbarProvider>
       </I18nProvider>
     </QueryClientProvider>

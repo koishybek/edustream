@@ -15,11 +15,11 @@ type CourseWithRels = Course & { category: Category; instructor: User };
 export class LearningService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** POST /courses/:id/enroll — free, idempotent. */
+  /** POST /courses/:id/enroll — free, idempotent, published-only. */
   async enroll(userId: string, courseId: string) {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true },
+      select: { id: true, status: true },
     });
     if (!course) throw new NotFoundException('Course not found');
 
@@ -28,6 +28,11 @@ export class LearningService {
     });
     if (existing) {
       return { enrollmentId: existing.id, alreadyEnrolled: true };
+    }
+    // New enrollments are only allowed into published courses — a DRAFT course's
+    // id must not be a backdoor to enroll/watch/quiz/review unpublished content.
+    if (course.status !== 'PUBLISHED') {
+      throw new NotFoundException('Course not found');
     }
     const created = await this.prisma.enrollment.create({
       data: { userId, courseId },
@@ -130,7 +135,8 @@ export class LearningService {
       update: {
         watchedSeconds: dto.watchedSeconds,
         completed: dto.completed,
-        completedAt: dto.completed ? new Date() : undefined,
+        // Clear the stamp when a lesson is un-completed (don't leave it stale).
+        completedAt: dto.completed ? new Date() : null,
       },
       create: {
         enrollmentId: enrollment.id,

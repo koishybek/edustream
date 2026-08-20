@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 
 /**
@@ -24,15 +25,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
-
+    let status: number = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Something went wrong';
     let details: unknown;
 
     if (exception instanceof HttpException) {
+      status = exception.getStatus();
       const res = exception.getResponse();
       if (typeof res === 'string') {
         message = res;
@@ -44,6 +42,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
         } else if (typeof body.message === 'string') {
           message = body.message;
         }
+      }
+    } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      const mapped = mapPrismaError(exception);
+      status = mapped.status;
+      message = mapped.message;
+      if (status >= 500) {
+        this.logger.error(`Prisma ${exception.code}: ${exception.message}`);
       }
     } else {
       this.logger.error(
@@ -60,6 +65,38 @@ export class HttpExceptionFilter implements ExceptionFilter {
       path: request.url,
       timestamp: new Date().toISOString(),
     });
+  }
+}
+
+/** Map Prisma known-request errors to sane HTTP statuses (not a blanket 500). */
+function mapPrismaError(e: Prisma.PrismaClientKnownRequestError): {
+  status: number;
+  message: string;
+} {
+  switch (e.code) {
+    case 'P2002': {
+      const target = Array.isArray(e.meta?.target)
+        ? (e.meta.target as string[]).join(', ')
+        : undefined;
+      return {
+        status: HttpStatus.CONFLICT,
+        message: target
+          ? `A record with this ${target} already exists`
+          : 'Resource already exists',
+      };
+    }
+    case 'P2003':
+      return {
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        message: 'A referenced record does not exist',
+      };
+    case 'P2025':
+      return { status: HttpStatus.NOT_FOUND, message: 'Record not found' };
+    default:
+      return {
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Something went wrong',
+      };
   }
 }
 

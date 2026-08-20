@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  AlertCircle,
   ArrowLeft,
   BarChart3,
   Bookmark,
@@ -27,6 +28,7 @@ import { Avatar } from "../../ui/Avatar";
 import { Badge } from "../../ui/Badge";
 import { Button } from "../../ui/Button";
 import { CourseCover } from "../../ui/Cover";
+import { EmptyState } from "../../ui/EmptyState";
 import { RatingStars } from "../../ui/RatingStars";
 import { Spinner } from "../../ui/Spinner";
 import { useSnackbar } from "../../ui/Snackbar";
@@ -97,7 +99,7 @@ export default function CourseScreen() {
   const { slug } = useParams<{ slug: string }>();
   const { snack } = useSnackbar();
 
-  const { data: course, isLoading } = useCourse(slug);
+  const { data: course, isLoading, isError, refetch } = useCourse(slug);
   const { data: reviews } = useCourseReviews(course?.id);
   const { data: enrollments } = useEnrollments();
   const enroll = useEnroll();
@@ -119,7 +121,7 @@ export default function CourseScreen() {
     }
   }, [myReview?.id]);
 
-  if (isLoading || !course) {
+  if (isLoading) {
     return (
       <div className="screen">
         <div className="screen__top">
@@ -131,6 +133,37 @@ export default function CourseScreen() {
         </div>
         <div className="screen__scroll" style={{ display: "grid", placeItems: "center", paddingTop: 60 }}>
           <Spinner />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !course) {
+    return (
+      <div className="screen">
+        <div className="screen__top">
+          <div className="appbar pad">
+            <button className="appbar__btn" onClick={() => navigate(-1)} aria-label={t("back")}>
+              <ArrowLeft className="icon" />
+            </button>
+          </div>
+        </div>
+        <div className="screen__scroll">
+          <EmptyState
+            icon={<AlertCircle className="icon-lg" />}
+            title={t("error.title")}
+            text={t("errorGeneric")}
+            action={
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <Button variant="primary" onClick={() => refetch()}>
+                  {t("error.retry")}
+                </Button>
+                <Button variant="ghost" onClick={() => navigate(-1)}>
+                  {t("back")}
+                </Button>
+              </div>
+            }
+          />
         </div>
       </div>
     );

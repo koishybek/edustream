@@ -1,12 +1,4 @@
-import {
-  Award,
-  Bell,
-  BookOpen,
-  ChevronRight,
-  CreditCard,
-  LogOut,
-  Settings,
-} from "lucide-react";
+import { BookOpen, ChevronRight, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../core/auth/auth.store";
 import type { AppLocale } from "../../core/auth/types";
@@ -18,7 +10,6 @@ import { BottomNav } from "../../ui/BottomNav";
 import { Button } from "../../ui/Button";
 import { ListRow } from "../../ui/ListRow";
 import { Segmented } from "../../ui/Segmented";
-import { useSnackbar } from "../../ui/Snackbar";
 
 export default function ProfileScreen() {
   const { t, locale, setLocale } = useI18n();
@@ -26,7 +17,6 @@ export default function ProfileScreen() {
   const user = useAuth((s) => s.user);
   const updateMe = useAuth((s) => s.updateMe);
   const logout = useAuth((s) => s.logout);
-  const { snack } = useSnackbar();
 
   if (!user) return null;
 
@@ -38,24 +28,11 @@ export default function ProfileScreen() {
       // Keep the UI choice even if persisting fails.
     }
   }
-  const soon = () => snack(t("profile.soon"));
 
   return (
     <div className="screen">
       <div className="screen__top">
-        <AppBar
-          title={t("profile.title")}
-          large
-          actions={
-            <button
-              className="appbar__btn"
-              onClick={soon}
-              aria-label={t("profile.groupSettings")}
-            >
-              <Settings className="icon" />
-            </button>
-          }
-        />
+        <AppBar title={t("profile.title")} large />
       </div>
 
       <div className="screen__scroll">
@@ -67,9 +44,6 @@ export default function ProfileScreen() {
               {user.email}
             </div>
           </div>
-          <Button variant="tonal" small onClick={soon}>
-            {t("profile.edit")}
-          </Button>
         </div>
 
         <div className="group-label">{t("profile.language")}</div>
@@ -88,28 +62,6 @@ export default function ProfileScreen() {
             title={t("profile.myCourses")}
             trail={<ChevronRight className="icon-sm" />}
             onClick={() => navigate("/learning")}
-          />
-          <ListRow
-            lead={<Award className="icon" />}
-            title={t("profile.certificates")}
-            trail={<ChevronRight className="icon-sm" />}
-            onClick={soon}
-          />
-        </div>
-
-        <div className="group-label">{t("profile.groupSettings")}</div>
-        <div className="settings-group">
-          <ListRow
-            lead={<Bell className="icon" />}
-            title={t("profile.notifications")}
-            trail={<ChevronRight className="icon-sm" />}
-            onClick={soon}
-          />
-          <ListRow
-            lead={<CreditCard className="icon" />}
-            title={t("profile.payments")}
-            trail={<ChevronRight className="icon-sm" />}
-            onClick={soon}
           />
         </div>
 

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  AlertCircle,
   ArrowLeft,
+  BookOpen,
   Check,
   HelpCircle,
   Lock,
@@ -14,6 +16,7 @@ import {
 } from "../../core/learning/learning.api";
 import { useI18n } from "../../core/i18n/I18nProvider";
 import { Button } from "../../ui/Button";
+import { EmptyState } from "../../ui/EmptyState";
 import { LessonVideo } from "../../ui/LessonVideo";
 import { Progress } from "../../ui/Progress";
 import { Spinner } from "../../ui/Spinner";
@@ -24,7 +27,8 @@ export default function PlayerScreen() {
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId: string }>();
   const { snack } = useSnackbar();
-  const { data: progress, isLoading } = useCourseProgress(courseId);
+  const { data: progress, isLoading, isError, refetch } =
+    useCourseProgress(courseId);
   const record = useRecordProgress(courseId);
 
   const modules = useMemo(() => progress?.modules ?? [], [progress]);
@@ -57,20 +61,56 @@ export default function PlayerScreen() {
   const showQuizCta =
     !!currentModule?.quiz && moduleLessonsDone && !currentModule.quiz.passed;
 
-  if (isLoading || !progress || !current) {
+  if (isLoading) {
     return (
-      <div className="screen">
-        <div className="screen__top">
-          <div className="appbar pad">
-            <button className="appbar__btn" onClick={() => navigate(-1)} aria-label={t("back")}>
-              <ArrowLeft className="icon" />
-            </button>
-          </div>
-        </div>
-        <div className="screen__scroll" style={{ display: "grid", placeItems: "center", paddingTop: 60 }}>
+      <PlayerShell onBack={() => navigate(-1)} backLabel={t("back")}>
+        <div style={{ display: "grid", placeItems: "center", paddingTop: 60 }}>
           <Spinner />
         </div>
-      </div>
+      </PlayerShell>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PlayerShell onBack={() => navigate(-1)} backLabel={t("back")}>
+        <EmptyState
+          icon={<AlertCircle className="icon-lg" />}
+          title={t("error.title")}
+          text={t("errorGeneric")}
+          action={
+            <Button
+              variant="primary"
+              onClick={() => refetch()}
+              style={{ marginTop: 8 }}
+            >
+              {t("error.retry")}
+            </Button>
+          }
+        />
+      </PlayerShell>
+    );
+  }
+
+  // Progress loaded but the course has no playable lessons (or none resolved).
+  if (!progress || !current) {
+    return (
+      <PlayerShell onBack={() => navigate(-1)} backLabel={t("back")}>
+        <EmptyState
+          icon={<BookOpen className="icon-lg" />}
+          title={t("player.emptyTitle")}
+          text={t("player.emptyText")}
+          action={
+            <Button
+              variant="ghost"
+              onClick={() => navigate(-1)}
+              style={{ marginTop: 8 }}
+            >
+              {t("back")}
+            </Button>
+          }
+        />
+      </PlayerShell>
     );
   }
 
@@ -86,6 +126,12 @@ export default function PlayerScreen() {
         completed: true,
       });
       snack(res.progressPercent >= 100 ? t("player.completed") : t("player.markDone"));
+      // Course is fully done — go to the completion screen (same target the
+      // quiz flow uses).
+      if (res.progressPercent >= 100) {
+        navigate(`/learn/${courseId}/complete`);
+        return;
+      }
       // If this finishes a module that has a pending quiz, stay put so the
       // "take the quiz" CTA surfaces; otherwise advance to the next lesson.
       if (isLastOfModule && mod?.quiz && !mod.quiz.passed) return;
@@ -213,6 +259,30 @@ export default function PlayerScreen() {
         </div>
         <div style={{ height: 20 }} />
       </div>
+    </div>
+  );
+}
+
+/** App-bar frame shared by the loading / error / empty states. */
+function PlayerShell({
+  children,
+  onBack,
+  backLabel,
+}: {
+  children: React.ReactNode;
+  onBack: () => void;
+  backLabel: string;
+}) {
+  return (
+    <div className="screen">
+      <div className="screen__top">
+        <div className="appbar pad">
+          <button className="appbar__btn" onClick={onBack} aria-label={backLabel}>
+            <ArrowLeft className="icon" />
+          </button>
+        </div>
+      </div>
+      <div className="screen__scroll">{children}</div>
     </div>
   );
 }

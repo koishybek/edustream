@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { randomBytes } from 'node:crypto';
 
 const prisma = new PrismaClient();
 
@@ -949,29 +950,59 @@ async function main() {
     categoryBySlug.set(created.slug, created.id);
   }
 
-  // Users
-  await prisma.user.create({
-    data: {
-      email: 'admin@demo.io',
-      passwordHash: await hash('Admin123!'),
-      role: 'ADMIN',
-      name: 'EduStream Admin',
-      locale: 'ru',
-    },
-  });
+  // Users. Demo login accounts (student/admin) are seeded ONLY in demo mode
+  // (local dev, or SEED_DEMO_ACCOUNTS=1) — never ship a known password to prod.
+  // A production deploy supplies its own admin via ADMIN_EMAIL/ADMIN_PASSWORD.
+  const seedDemo =
+    process.env.NODE_ENV !== 'production' ||
+    process.env.SEED_DEMO_ACCOUNTS === '1';
 
-  const student = await prisma.user.create({
-    data: {
-      email: 'student@demo.io',
-      passwordHash: await hash('Student123!'),
-      role: 'STUDENT',
-      name: 'Sarah Jenkins',
-      locale: 'ru',
-      interests: ['climate', 'circular-economy'],
-      knowledgeLevel: 'INTERMEDIATE',
-    },
-  });
+  if (seedDemo) {
+    await prisma.user.create({
+      data: {
+        email: 'admin@demo.io',
+        passwordHash: await hash('Admin123!'),
+        role: 'ADMIN',
+        name: 'EduStream Admin',
+        locale: 'ru',
+      },
+    });
+  } else if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+    await prisma.user.create({
+      data: {
+        email: process.env.ADMIN_EMAIL.toLowerCase().trim(),
+        passwordHash: await hash(process.env.ADMIN_PASSWORD),
+        role: 'ADMIN',
+        name: 'Administrator',
+        locale: 'en',
+      },
+    });
+  } else {
+    // eslint-disable-next-line no-console
+    console.warn(
+      'No admin seeded (production without ADMIN_EMAIL/ADMIN_PASSWORD).',
+    );
+  }
 
+  const student = seedDemo
+    ? await prisma.user.create({
+        data: {
+          email: 'student@demo.io',
+          passwordHash: await hash('Student123!'),
+          role: 'STUDENT',
+          name: 'Sarah Jenkins',
+          locale: 'ru',
+          interests: ['climate', 'circular-economy'],
+          knowledgeLevel: 'INTERMEDIATE',
+        },
+      })
+    : null;
+
+  // Instructors always exist (courses reference them). Outside demo mode they get
+  // a random, unusable password so INSTRUCTOR is not a known-credential vector.
+  const instructorPassword = seedDemo
+    ? 'Instructor123!'
+    : randomBytes(24).toString('hex');
   const instructors = await Promise.all(
     [
       { email: 'elena@demo.io', name: 'Dr. Elena Rostova' },
@@ -981,7 +1012,7 @@ async function main() {
       prisma.user.create({
         data: {
           email: i.email,
-          passwordHash: await hash('Instructor123!'),
+          passwordHash: await hash(instructorPassword),
           role: 'INSTRUCTOR',
           name: i.name,
           locale: 'en',
@@ -1090,50 +1121,55 @@ async function main() {
   // Pre-enroll the demo student in course #3 (Circular Economies): complete the
   // first module's lessons but NOT its quiz — so the learning + quiz loop is
   // demonstrable. Progress = (done lessons + passed quizzes) / (lessons + quizzes).
-  const enrolledCourseId = createdCourses[2].id;
-  const enrollment = await prisma.enrollment.create({
-    data: { userId: student.id, courseId: enrolledCourseId, status: 'ACTIVE' },
-  });
+  // Only in demo mode (the student account only exists there).
+  let demoProgress = 0;
+  if (student) {
+    const enrolledCourseId = createdCourses[2].id;
+    const enrollment = await prisma.enrollment.create({
+      data: { userId: student.id, courseId: enrolledCourseId, status: 'ACTIVE' },
+    });
 
-  const firstModule = await prisma.module.findFirst({
-    where: { courseId: enrolledCourseId },
-    orderBy: { order: 'asc' },
-    include: { lessons: { orderBy: { order: 'asc' } } },
-  });
-  for (const lesson of firstModule?.lessons ?? []) {
-    await prisma.lessonProgress.create({
-      data: {
-        enrollmentId: enrollment.id,
-        lessonId: lesson.id,
-        completed: true,
-        watchedSeconds: lesson.durationSeconds,
-        completedAt: new Date(),
-      },
+    const firstModule = await prisma.module.findFirst({
+      where: { courseId: enrolledCourseId },
+      orderBy: { order: 'asc' },
+      include: { lessons: { orderBy: { order: 'asc' } } },
+    });
+    for (const lesson of firstModule?.lessons ?? []) {
+      await prisma.lessonProgress.create({
+        data: {
+          enrollmentId: enrollment.id,
+          lessonId: lesson.id,
+          completed: true,
+          watchedSeconds: lesson.durationSeconds,
+          completedAt: new Date(),
+        },
+      });
+    }
+
+    const [totalLessons, totalQuizzes, doneLessons] = await Promise.all([
+      prisma.lesson.count({ where: { module: { courseId: enrolledCourseId } } }),
+      prisma.quiz.count({ where: { module: { courseId: enrolledCourseId } } }),
+      prisma.lessonProgress.count({
+        where: { enrollmentId: enrollment.id, completed: true },
+      }),
+    ]);
+    const units = totalLessons + totalQuizzes;
+    demoProgress = units === 0 ? 0 : Math.round((doneLessons / units) * 100);
+    await prisma.enrollment.update({
+      where: { id: enrollment.id },
+      data: { progressPercent: demoProgress },
     });
   }
-
-  const [totalLessons, totalQuizzes, doneLessons] = await Promise.all([
-    prisma.lesson.count({ where: { module: { courseId: enrolledCourseId } } }),
-    prisma.quiz.count({ where: { module: { courseId: enrolledCourseId } } }),
-    prisma.lessonProgress.count({
-      where: { enrollmentId: enrollment.id, completed: true },
-    }),
-  ]);
-  const units = totalLessons + totalQuizzes;
-  const progressPercent =
-    units === 0 ? 0 : Math.round((doneLessons / units) * 100);
-  await prisma.enrollment.update({
-    where: { id: enrollment.id },
-    data: { progressPercent },
-  });
 
   const totalQuizCount = await prisma.quiz.count();
   // eslint-disable-next-line no-console
   console.log(
     `Seed complete: ${CATEGORIES.length} categories, ${COURSES.length} courses, ` +
-      `${totalQuizCount} module quizzes, ${instructors.length} instructors. ` +
-      `Demo student enrolled in "${COURSES[2].title}" at ${progressPercent}% ` +
-      `(module 1 lessons done, quiz pending).`,
+      `${totalQuizCount} module quizzes, ${instructors.length} instructors.` +
+      (student
+        ? ` Demo student enrolled in "${COURSES[2].title}" at ${demoProgress}% ` +
+          `(module 1 lessons done, quiz pending).`
+        : ' (production mode: no demo accounts seeded).'),
   );
 }
 

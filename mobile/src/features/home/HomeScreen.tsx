@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bell, SearchX, SlidersHorizontal } from "lucide-react";
+import { AlertCircle, Bell, SearchX, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../core/auth/auth.store";
 import {
@@ -62,7 +62,12 @@ export default function HomeScreen() {
     [sheet, search],
   );
 
-  const { data: courses, isLoading: coursesLoading } = useCourses(filters);
+  const {
+    data: courses,
+    isLoading: coursesLoading,
+    isError: coursesError,
+    refetch: refetchCourses,
+  } = useCourses(filters);
 
   // Top picks: the highest-rated courses, shown only on the unfiltered home.
   const { data: recommended } = useCourses({ sort: "rating", pageSize: 8 });
@@ -202,13 +207,32 @@ export default function HomeScreen() {
             </div>
 
             {list.length === 0 ? (
-              <div style={{ padding: "8px 18px 0" }}>
-                <EmptyState
-                  icon={<SearchX className="icon-lg" />}
-                  title={t("home.emptyTitle")}
-                  text={t("home.emptyText")}
-                />
-              </div>
+              coursesError ? (
+                <div style={{ padding: "8px 18px 0" }}>
+                  <EmptyState
+                    icon={<AlertCircle className="icon-lg" />}
+                    title={t("error.title")}
+                    text={t("errorGeneric")}
+                    action={
+                      <Button
+                        variant="primary"
+                        onClick={() => refetchCourses()}
+                        style={{ marginTop: 8 }}
+                      >
+                        {t("error.retry")}
+                      </Button>
+                    }
+                  />
+                </div>
+              ) : (
+                <div style={{ padding: "8px 18px 0" }}>
+                  <EmptyState
+                    icon={<SearchX className="icon-lg" />}
+                    title={t("home.emptyTitle")}
+                    text={t("home.emptyText")}
+                  />
+                </div>
+              )
             ) : (
               <div className="grid2">
                 {list.map((c) => (

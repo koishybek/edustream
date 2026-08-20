@@ -40,6 +40,8 @@ export const extraDict: Record<AppLocale, Record<string, string>> = {
     "player.markDone": "Урок пройден",
     "player.courseProgress": "Прогресс курса",
     "player.completed": "Курс завершён!",
+    "player.emptyTitle": "Уроки недоступны",
+    "player.emptyText": "В этом курсе пока нет уроков.",
 
     "quiz.takeModuleTest": "Пройти тест модуля",
     "quiz.moduleTest": "Тест модуля",
@@ -103,6 +105,8 @@ export const extraDict: Record<AppLocale, Record<string, string>> = {
     "player.markDone": "Lesson complete",
     "player.courseProgress": "Course progress",
     "player.completed": "Course complete!",
+    "player.emptyTitle": "No lessons yet",
+    "player.emptyText": "This course has no lessons yet.",
 
     "quiz.takeModuleTest": "Take the module quiz",
     "quiz.moduleTest": "Module quiz",
@@ -166,6 +170,8 @@ export const extraDict: Record<AppLocale, Record<string, string>> = {
     "player.markDone": "Сабақ аяқталды",
     "player.courseProgress": "Курс прогресі",
     "player.completed": "Курс аяқталды!",
+    "player.emptyTitle": "Сабақтар жоқ",
+    "player.emptyText": "Бұл курста әзірше сабақтар жоқ.",
 
     "quiz.takeModuleTest": "Модуль тестін тапсыру",
     "quiz.moduleTest": "Модуль тесті",

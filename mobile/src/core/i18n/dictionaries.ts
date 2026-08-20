@@ -18,6 +18,8 @@ export const dictionaries: Record<AppLocale, Record<string, string>> = {
     retry: "Повторить",
     loading: "Загрузка…",
     errorGeneric: "Что-то пошло не так",
+    "error.title": "Не удалось загрузить",
+    "error.retry": "Повторить",
     email: "Эл. почта",
     password: "Пароль",
     name: "Имя",
@@ -115,8 +117,7 @@ export const dictionaries: Record<AppLocale, Record<string, string>> = {
 
     "learning.title": "Моё обучение",
     "learning.emptyTitle": "Здесь будут ваши курсы",
-    "learning.emptyText":
-      "Купленные курсы появятся тут. Начните с каталога — там есть курс с бесплатным превью.",
+    "learning.emptyText": "Записанные курсы появятся здесь",
     "learning.toCatalog": "В каталог",
 
     "profile.title": "Профиль",
@@ -146,6 +147,8 @@ export const dictionaries: Record<AppLocale, Record<string, string>> = {
     retry: "Try again",
     loading: "Loading…",
     errorGeneric: "Something went wrong",
+    "error.title": "Couldn't load",
+    "error.retry": "Try again",
     email: "Email",
     password: "Password",
     name: "Name",
@@ -215,12 +218,17 @@ export const dictionaries: Record<AppLocale, Record<string, string>> = {
     "home.viewAll": "All",
     "home.catalogSoon": "The course catalog arrives in the next phase.",
     "home.soonTitle": "Courses are on the way",
+    "home.courseCount": "{count} courses",
+    "home.emptyTitle": "Nothing found",
+    "home.emptyText": "Try adjusting your search or resetting the filters.",
     "cat.all": "All",
+
+    "course.preview": "Preview",
+    "course.hoursLevel": "{hours} h · {level}",
 
     "learning.title": "My learning",
     "learning.emptyTitle": "Your courses will appear here",
-    "learning.emptyText":
-      "Purchased courses show up here. Start from the catalog — one has a free preview.",
+    "learning.emptyText": "Enrolled courses appear here",
     "learning.toCatalog": "Browse catalog",
 
     "profile.title": "Profile",
@@ -250,6 +258,8 @@ export const dictionaries: Record<AppLocale, Record<string, string>> = {
     retry: "Қайталау",
     loading: "Жүктелуде…",
     errorGeneric: "Бірдеңе дұрыс болмады",
+    "error.title": "Жүктеу мүмкін болмады",
+    "error.retry": "Қайталау",
     email: "Электрондық пошта",
     password: "Құпиясөз",
     name: "Аты",
@@ -319,12 +329,17 @@ export const dictionaries: Record<AppLocale, Record<string, string>> = {
     "home.viewAll": "Барлығы",
     "home.catalogSoon": "Курстар каталогы келесі кезеңде пайда болады.",
     "home.soonTitle": "Курстар жолда",
+    "home.courseCount": "{count} курс",
+    "home.emptyTitle": "Ештеңе табылмады",
+    "home.emptyText": "Іздеуді өзгертіп немесе сүзгілерді тазалап көріңіз.",
     "cat.all": "Барлығы",
+
+    "course.preview": "Превью",
+    "course.hoursLevel": "{hours} сағ · {level}",
 
     "learning.title": "Менің оқуым",
     "learning.emptyTitle": "Курстарыңыз осында болады",
-    "learning.emptyText":
-      "Сатып алынған курстар осында шығады. Каталогтан бастаңыз — онда тегін превью бар.",
+    "learning.emptyText": "Тіркелген курстар осында көрінеді",
     "learning.toCatalog": "Каталогқа",
 
     "profile.title": "Профиль",

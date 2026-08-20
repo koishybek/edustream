@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -36,6 +37,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, next);
     setLocaleState(next);
   }, []);
+
+  // Keep the document language in sync for a11y / screen readers. Kazakh's
+  // BCP-47 tag is "kk"; "ru"/"en" map through unchanged. Runs on mount too.
+  useEffect(() => {
+    document.documentElement.lang = locale === "kz" ? "kk" : locale;
+  }, [locale]);
 
   const t = useCallback(
     (key: string, params?: TranslateParams) => {

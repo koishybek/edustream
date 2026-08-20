@@ -13,6 +13,7 @@ import type { Level } from "../../core/auth/types";
 import { useI18n } from "../../core/i18n/I18nProvider";
 import { Button } from "../../ui/Button";
 import { ChipSelect } from "../../ui/Chip";
+import { useSnackbar } from "../../ui/Snackbar";
 
 const INTERESTS = [
   "climate",
@@ -39,6 +40,7 @@ const EYEBROW: React.CSSProperties = {
 export default function OnboardingScreen() {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { snack } = useSnackbar();
   const updateMe = useAuth((s) => s.updateMe);
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -58,6 +60,8 @@ export default function OnboardingScreen() {
     try {
       await updateMe({ interests: selected, knowledgeLevel: level });
       navigate("/", { replace: true });
+    } catch {
+      snack(t("errorGeneric"), "error");
     } finally {
       setSaving(false);
     }

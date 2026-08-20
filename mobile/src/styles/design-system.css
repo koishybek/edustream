@@ -55,6 +55,13 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* ---------- Focus ring (keyboard navigation only) ---------- */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* ---------- Type scale ---------- */
 .t-display { font-size: 28px; line-height: 1.18; font-weight: 700; letter-spacing: -.02em; }
 .t-title   { font-size: 22px; line-height: 1.25; font-weight: 600; letter-spacing: -.015em; }
@@ -155,6 +162,7 @@ svg.lucide { stroke-width: 1.75; }
   height: 48px; padding: 0 var(--s4); border-radius: var(--r-input);
   background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
 }
+.search:focus-within { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .search .icon { color: var(--text-2); }
 .search input {
   flex: 1; border: none; outline: none; background: transparent;
